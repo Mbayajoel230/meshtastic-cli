@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Box, Text, useInput, useApp, useStdout } from "ink";
 import { theme } from "./theme";
 import type { DecodedPacket } from "../protocol/decoder";
 import type { PacketStore } from "../protocol/packet-store";
 import type { NodeStore, NodeData } from "../protocol/node-store";
 import type { Transport, DeviceStatus } from "../transport/types";
+import { HttpTransport } from "../transport";
 import { Mesh, Portnums, Telemetry } from "@meshtastic/protobufs";
 import { PacketList } from "./components/PacketList";
 import { PacketInspector } from "./components/PacketInspector";
@@ -16,22 +17,56 @@ import { formatNodeId } from "../utils/hex";
 
 type AppMode = "packets" | "nodes" | "chat";
 
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
 interface AppProps {
-  transport: Transport;
+  address: string;
   packetStore: PacketStore;
   nodeStore: NodeStore;
 }
 
-export function App({ transport, packetStore, nodeStore }: AppProps) {
+export function App({ address, packetStore, nodeStore }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
+  const [transport, setTransport] = useState<Transport | null>(null);
   const [mode, setMode] = useState<AppMode>("packets");
-  const [status, setStatus] = useState<DeviceStatus>("disconnected");
+  const [status, setStatus] = useState<DeviceStatus>("connecting");
   const [packets, setPackets] = useState<DecodedPacket[]>([]);
   const [selectedPacketIndex, setSelectedPacketIndex] = useState(0);
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [selectedNodeIndex, setSelectedNodeIndex] = useState(0);
   const [terminalHeight, setTerminalHeight] = useState(stdout?.rows || 24);
+  const [spinnerFrame, setSpinnerFrame] = useState(0);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  // Spinner animation
+  useEffect(() => {
+    if (status === "connecting") {
+      const interval = setInterval(() => {
+        setSpinnerFrame((f) => (f + 1) % SPINNER_FRAMES.length);
+      }, 80);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
+
+  // Connect to device
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const t = await HttpTransport.create(address);
+        if (!cancelled) {
+          setTransport(t);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setConnectError(e instanceof Error ? e.message : String(e));
+          setStatus("disconnected");
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [address]);
 
   // Track terminal resize
   useEffect(() => {
@@ -43,6 +78,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
       stdout?.off("resize", updateSize);
     };
   }, [stdout]);
+
   const [myNodeNum, setMyNodeNum] = useState(0);
   const [myShortName, setMyShortName] = useState("");
   const [messages, setMessages] = useState<db.DbMessage[]>([]);
@@ -80,6 +116,8 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
 
   // Start transport
   useEffect(() => {
+    if (!transport) return;
+
     let running = true;
     let configRequested = false;
 
@@ -104,7 +142,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
     return () => {
       running = false;
     };
-  }, []);
+  }, [transport]);
 
   const processPacketForNodes = useCallback((packet: DecodedPacket) => {
     const fr = packet.fromRadio;
@@ -161,6 +199,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
   }, [nodeStore]);
 
   const requestConfig = useCallback(async () => {
+    if (!transport) return;
     const toRadio = create(Mesh.ToRadioSchema, {
       payloadVariant: { case: "wantConfigId", value: Math.floor(Math.random() * 0xffffffff) },
     });
@@ -173,7 +212,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
   }, [transport]);
 
   const fetchOwnerFallback = useCallback(async () => {
-    if (!transport.fetchOwner) return;
+    if (!transport?.fetchOwner) return;
     const owner = await transport.fetchOwner();
     if (owner && owner.myNodeNum) {
       setMyNodeNum(owner.myNodeNum);
@@ -187,7 +226,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
   }, []);
 
   const sendMessage = useCallback(async (text: string) => {
-    if (!myNodeNum || !text.trim()) return;
+    if (!transport || !myNodeNum || !text.trim()) return;
 
     const packetId = Math.floor(Math.random() * 0xffffffff);
     const data = create(Mesh.DataSchema, {
@@ -229,7 +268,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
   }, [myNodeNum, chatChannel, transport, showNotification]);
 
   const sendTraceroute = useCallback(async (destNode: number) => {
-    if (!myNodeNum) return;
+    if (!transport || !myNodeNum) return;
 
     const routeDiscovery = create(Mesh.RouteDiscoverySchema, { route: [] });
     const payload = toBinary(Mesh.RouteDiscoverySchema, routeDiscovery);
@@ -343,6 +382,30 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
     helpText = "[j/k] select [t]raceroute | " + helpText;
   } else if (mode === "chat") {
     helpText = "[Tab] channel [Enter] send [Esc] exit";
+  }
+
+  // Show connecting screen
+  if (!transport) {
+    return (
+      <Box flexDirection="column" width="100%" height="100%" justifyContent="center" alignItems="center">
+        <Box flexDirection="column" alignItems="center">
+          <Text bold color={theme.fg.accent}>{"▓▓▓ MESHTASTIC ▓▓▓"}</Text>
+          <Text> </Text>
+          {connectError ? (
+            <>
+              <Text color={theme.packet.encrypted}>Connection failed</Text>
+              <Text color={theme.fg.muted}>{connectError}</Text>
+              <Text> </Text>
+              <Text color={theme.fg.secondary}>Press q to quit</Text>
+            </>
+          ) : (
+            <>
+              <Text color={theme.fg.accent}>{SPINNER_FRAMES[spinnerFrame]} Connecting to {address}...</Text>
+            </>
+          )}
+        </Box>
+      </Box>
+    );
   }
 
   return (
