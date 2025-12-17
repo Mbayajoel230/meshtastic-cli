@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@meshtastic/protobufs": "^2.7.8",
+    "@opentui/core": "^0.1.61",
     "serialport": "^12.0.0"
   },
   "devDependencies": {
