@@ -10,12 +10,25 @@ interface PacketListProps {
   packets: DecodedPacket[];
   selectedIndex: number;
   nodeStore: NodeStore;
+  height?: number;
 }
 
-export function PacketList({ packets, selectedIndex, nodeStore }: PacketListProps) {
-  // Show last N packets that fit
-  const visiblePackets = packets.slice(-30);
-  const startIndex = packets.length - visiblePackets.length;
+export function PacketList({ packets, selectedIndex, nodeStore, height = 20 }: PacketListProps) {
+  // Calculate visible window that keeps selection in view
+  const visibleCount = Math.max(1, height - 2); // Account for borders
+
+  // Calculate scroll offset to keep selection visible
+  let startIndex = 0;
+  if (packets.length > visibleCount) {
+    // Keep selection in middle of viewport when possible
+    const halfView = Math.floor(visibleCount / 2);
+    startIndex = Math.max(0, Math.min(
+      selectedIndex - halfView,
+      packets.length - visibleCount
+    ));
+  }
+
+  const visiblePackets = packets.slice(startIndex, startIndex + visibleCount);
 
   return (
     <Box flexDirection="column" width="100%">
@@ -24,7 +37,7 @@ export function PacketList({ packets, selectedIndex, nodeStore }: PacketListProp
         const isSelected = actualIndex === selectedIndex;
         return (
           <PacketRow
-            key={packet.id}
+            key={`${packet.id}-${actualIndex}`}
             packet={packet}
             nodeStore={nodeStore}
             isSelected={isSelected}

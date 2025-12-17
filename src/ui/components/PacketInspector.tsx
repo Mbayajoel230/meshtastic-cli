@@ -11,7 +11,7 @@ interface PacketInspectorProps {
 export function PacketInspector({ packet }: PacketInspectorProps) {
   if (!packet) {
     return (
-      <Box flexDirection="column" padding={1}>
+      <Box flexDirection="column" paddingX={1}>
         <Text color={theme.fg.muted}>No packet selected</Text>
       </Box>
     );
@@ -21,7 +21,7 @@ export function PacketInspector({ packet }: PacketInspectorProps) {
   const fr = packet.fromRadio;
 
   return (
-    <Box flexDirection="column" padding={1} width="100%">
+    <Box flexDirection="column" paddingX={1}>
       <Text color={theme.fg.accent} bold>Packet Inspector</Text>
       <Text> </Text>
 

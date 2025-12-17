@@ -7,16 +7,32 @@ import { formatNodeId } from "../../utils/hex";
 interface NodesPanelProps {
   nodes: NodeData[];
   selectedIndex: number;
+  height?: number;
 }
 
-export function NodesPanel({ nodes, selectedIndex }: NodesPanelProps) {
+export function NodesPanel({ nodes, selectedIndex, height = 20 }: NodesPanelProps) {
   if (nodes.length === 0) {
     return (
-      <Box flexDirection="column" padding={1}>
+      <Box flexDirection="column" paddingX={1}>
         <Text color={theme.fg.muted}>No nodes discovered yet</Text>
       </Box>
     );
   }
+
+  // Calculate visible window that keeps selection in view
+  const visibleCount = Math.max(1, height - 3); // Account for borders and header
+
+  // Calculate scroll offset to keep selection visible
+  let startIndex = 0;
+  if (nodes.length > visibleCount) {
+    const halfView = Math.floor(visibleCount / 2);
+    startIndex = Math.max(0, Math.min(
+      selectedIndex - halfView,
+      nodes.length - visibleCount
+    ));
+  }
+
+  const visibleNodes = nodes.slice(startIndex, startIndex + visibleCount);
 
   return (
     <Box flexDirection="column" width="100%">
@@ -33,11 +49,11 @@ export function NodesPanel({ nodes, selectedIndex }: NodesPanelProps) {
       </Box>
 
       {/* Node rows */}
-      {nodes.slice(0, 30).map((node, i) => (
+      {visibleNodes.map((node, i) => (
         <NodeRow
           key={node.num}
           node={node}
-          isSelected={i === selectedIndex}
+          isSelected={startIndex + i === selectedIndex}
         />
       ))}
     </Box>

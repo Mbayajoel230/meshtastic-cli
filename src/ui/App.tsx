@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Box, Text, useInput, useApp } from "ink";
+import { Box, Text, useInput, useApp, useStdout } from "ink";
 import { theme } from "./theme";
 import type { DecodedPacket } from "../protocol/decoder";
 import type { PacketStore } from "../protocol/packet-store";
@@ -24,12 +24,25 @@ interface AppProps {
 
 export function App({ transport, packetStore, nodeStore }: AppProps) {
   const { exit } = useApp();
+  const { stdout } = useStdout();
   const [mode, setMode] = useState<AppMode>("packets");
   const [status, setStatus] = useState<DeviceStatus>("disconnected");
   const [packets, setPackets] = useState<DecodedPacket[]>([]);
   const [selectedPacketIndex, setSelectedPacketIndex] = useState(0);
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [selectedNodeIndex, setSelectedNodeIndex] = useState(0);
+  const [terminalHeight, setTerminalHeight] = useState(stdout?.rows || 24);
+
+  // Track terminal resize
+  useEffect(() => {
+    const updateSize = () => {
+      setTerminalHeight(stdout?.rows || 24);
+    };
+    stdout?.on("resize", updateSize);
+    return () => {
+      stdout?.off("resize", updateSize);
+    };
+  }, [stdout]);
   const [myNodeNum, setMyNodeNum] = useState(0);
   const [myShortName, setMyShortName] = useState("");
   const [messages, setMessages] = useState<db.DbMessage[]>([]);
@@ -259,14 +272,13 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
     }
 
     // Mode switching
-    if (key.ctrl && input === "1") { setMode("packets"); return; }
-    if (key.ctrl && input === "2") { setMode("nodes"); return; }
-    if (key.ctrl && input === "3") { setMode("chat"); return; }
-
     if (mode !== "chat") {
-      if (input === "p") { setMode("packets"); return; }
-      if (input === "n") { setMode("nodes"); return; }
-      if (input === "c") { setMode("chat"); return; }
+      if (input === "1" || input === "p") { setMode("packets"); return; }
+      if (input === "2" || input === "n") { setMode("nodes"); return; }
+      if (input === "3" || input === "c") { setMode("chat"); return; }
+    } else {
+      // In chat mode, Escape or Ctrl+C exits to packets
+      if (key.escape) { setMode("packets"); return; }
     }
 
     // Mode-specific keys
@@ -288,10 +300,6 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
         sendTraceroute(nodes[selectedNodeIndex].num);
       }
     } else if (mode === "chat") {
-      if (key.escape) {
-        setMode("packets");
-        return;
-      }
       if (key.return) {
         sendMessage(chatInput);
         return;
@@ -331,13 +339,13 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
   const statusColor = status === "connected" ? theme.status.online : theme.status.offline;
   const nodeCount = nodes.length;
 
-  let helpText = "^1 packets ^2 nodes ^3 chat";
+  let helpText = "[1] packets [2] nodes [3] chat [q] quit";
   if (mode === "packets") {
-    helpText = "[j/k] select [1-3] view | " + helpText;
+    helpText = "[j/k] select | " + helpText;
   } else if (mode === "nodes") {
     helpText = "[j/k] select [t]raceroute | " + helpText;
   } else if (mode === "chat") {
-    helpText = "[Tab] channel [Enter] send [Esc] back | " + helpText;
+    helpText = "[Tab] channel [Enter] send [Esc] exit";
   }
 
   return (
@@ -367,6 +375,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
                 packets={packets}
                 selectedIndex={selectedPacketIndex}
                 nodeStore={nodeStore}
+                height={terminalHeight - 17}
               />
             </Box>
             <Box height={12} borderStyle="single" borderColor={theme.border.normal}>
@@ -380,6 +389,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
             <NodesPanel
               nodes={nodes}
               selectedIndex={selectedNodeIndex}
+              height={terminalHeight - 6}
             />
           </Box>
         )}
