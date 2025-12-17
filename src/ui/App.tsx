@@ -118,9 +118,6 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
     if (fr.payloadVariant.case === "nodeInfo") {
       const nodeInfo = fr.payloadVariant.value;
       nodeStore.updateFromNodeInfo(nodeInfo);
-      if (nodeInfo.user) {
-        setMyShortName((prev) => nodeInfo.user?.shortName || prev);
-      }
     }
 
     if (fr.payloadVariant.case === "packet" && packet.meshPacket) {
@@ -361,7 +358,7 @@ export function App({ transport, packetStore, nodeStore }: AppProps) {
       >
         <Text bold color={theme.fg.accent}>{"▓▓▓ MESHTASTIC ▓▓▓"}</Text>
         <Text color={theme.fg.secondary}>
-          {myShortName || "???"} <Text color={theme.fg.muted}>{formatNodeId(myNodeNum)}</Text>
+          {myShortName || (myNodeNum ? nodeStore.getNodeName(myNodeNum) : "???")} <Text color={theme.fg.muted}>{formatNodeId(myNodeNum)}</Text>
         </Text>
         {getModeLabel()}
       </Box>
