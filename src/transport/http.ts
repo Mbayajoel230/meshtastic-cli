@@ -107,7 +107,7 @@ export class HttpTransport implements Transport {
     const response = await fetch(`${this.url}/api/v1/toradio`, {
       method: "PUT",
       headers: { "Content-Type": "application/x-protobuf" },
-      body: data,
+      body: Buffer.from(data),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
