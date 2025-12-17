@@ -86,6 +86,9 @@ export class ChatPanel {
     this.container.add(this.inputBox);
 
     this.updateChannelBar();
+  }
+
+  init() {
     this.loadMessages();
   }
 

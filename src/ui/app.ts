@@ -63,7 +63,8 @@ export class App {
     this.renderer.setBackgroundColor(theme.bg.primary);
     this.createLayout();
     this.setupKeyHandlers();
-    this.renderPersistedPackets();
+    // Defer packet rendering to next frame to allow layout initialization
+    setTimeout(() => this.renderPersistedPackets(), 0);
     this.packetStore.onPacket((p) => this.running && this.handlePacket(p));
     this.nodeStore.startPeriodicUpdates(1000);
     this.startTransport();
@@ -118,11 +119,6 @@ export class App {
       flexDirection: "column",
     });
 
-    this.createPacketsView();
-    this.createNodesView();
-    this.createChatView();
-    this.showCurrentMode();
-
     this.statusBar = new BoxRenderable(this.renderer, {
       id: "status-bar",
       width: "100%",
@@ -136,6 +132,11 @@ export class App {
       content: t`${fg(theme.fg.secondary)("Connecting...")}`,
     });
     this.statusBar.add(this.statusText);
+
+    this.createPacketsView();
+    this.createNodesView();
+    this.createChatView();
+    this.showCurrentMode();
 
     this.renderer.root.add(this.header);
     this.renderer.root.add(this.modeContainer);
@@ -168,6 +169,8 @@ export class App {
     this.chatPanel.setSendHandler((channel, text) => this.sendMessage(channel, text));
   }
 
+  private chatInitialized = false;
+
   private showCurrentMode() {
     for (const child of this.modeContainer.getChildren()) {
       this.modeContainer.remove(child.id);
@@ -180,6 +183,10 @@ export class App {
       this.modeContainer.add(this.nodesPanel.element);
     } else if (this.mode === "chat") {
       this.modeContainer.add(this.chatPanel.element);
+      if (!this.chatInitialized) {
+        this.chatInitialized = true;
+        this.chatPanel.init();
+      }
       this.chatPanel.focusInput();
     }
 
@@ -187,17 +194,11 @@ export class App {
     this.updateStatus();
   }
 
-  private getModeLabel(): string {
-    const modes: { key: AppMode; label: string }[] = [
-      { key: "packets", label: "PACKETS" },
-      { key: "nodes", label: "NODES" },
-      { key: "chat", label: "CHAT" },
-    ];
-    return modes.map((m) =>
-      m.key === this.mode
-        ? t`${bold(fg(theme.fg.accent)(`[${m.label}]`))}`
-        : t`${fg(theme.fg.muted)(`[${m.label}]`)}`
-    ).join(" ");
+  private getModeLabel() {
+    const p = this.mode === "packets";
+    const n = this.mode === "nodes";
+    const c = this.mode === "chat";
+    return t`${p ? bold(fg(theme.fg.accent)("[PACKETS]")) : fg(theme.fg.muted)("[PACKETS]")} ${n ? bold(fg(theme.fg.accent)("[NODES]")) : fg(theme.fg.muted)("[NODES]")} ${c ? bold(fg(theme.fg.accent)("[CHAT]")) : fg(theme.fg.muted)("[CHAT]")}`;
   }
 
   private setupKeyHandlers() {

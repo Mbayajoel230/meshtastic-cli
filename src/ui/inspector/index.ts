@@ -116,13 +116,11 @@ export class PacketInspector {
     }
   }
 
-  private renderNormalized(): string {
+  private renderNormalized() {
     const p = this.packet!;
-    const lines: string[] = [];
 
     if (p.decodeError) {
-      lines.push(t`${fg(theme.packet.encrypted)("Decode Error:")} ${p.decodeError}`);
-      return lines.join("\n");
+      return t`${fg(theme.packet.encrypted)("Decode Error:")} ${p.decodeError}`;
     }
 
     const fr = p.fromRadio;
@@ -131,83 +129,99 @@ export class PacketInspector {
     if (fr.payloadVariant.case === "packet" && p.meshPacket) {
       const mp = p.meshPacket;
       const portName = p.portnum !== undefined ? Portnums.PortNum[p.portnum] || `PORT_${p.portnum}` : "ENCRYPTED";
+      const to = mp.to === 0xffffffff ? "^all" : formatNodeId(mp.to);
 
-      lines.push(t`${fg(theme.fg.secondary)("Type:")} ${fg(theme.fg.primary)(portName)}`);
-      lines.push(t`${fg(theme.fg.secondary)("From:")} ${fg(theme.fg.primary)(formatNodeId(mp.from))}`);
-      lines.push(t`${fg(theme.fg.secondary)("To:")} ${fg(theme.fg.primary)(mp.to === 0xffffffff ? "^all" : formatNodeId(mp.to))}`);
-      lines.push(t`${fg(theme.fg.secondary)("Channel:")} ${fg(theme.fg.primary)(mp.channel.toString())}`);
-      lines.push(t`${fg(theme.fg.secondary)("ID:")} ${fg(theme.fg.primary)(`#${mp.id}`)}`);
-      lines.push(t`${fg(theme.fg.secondary)("Hop Limit:")} ${fg(theme.fg.primary)(mp.hopLimit.toString())}`);
-      if (mp.hopStart) lines.push(t`${fg(theme.fg.secondary)("Hop Start:")} ${fg(theme.fg.primary)(mp.hopStart.toString())}`);
+      let result = t`${fg(theme.fg.secondary)("Type:")} ${fg(theme.fg.primary)(portName)}
+${fg(theme.fg.secondary)("From:")} ${fg(theme.fg.primary)(formatNodeId(mp.from))}
+${fg(theme.fg.secondary)("To:")} ${fg(theme.fg.primary)(to)}
+${fg(theme.fg.secondary)("Channel:")} ${fg(theme.fg.primary)(mp.channel.toString())}
+${fg(theme.fg.secondary)("ID:")} ${fg(theme.fg.primary)(`#${mp.id}`)}
+${fg(theme.fg.secondary)("Hop Limit:")} ${fg(theme.fg.primary)(mp.hopLimit.toString())}`;
 
-      if (mp.rxTime) lines.push(t`${fg(theme.fg.secondary)("RX Time:")} ${fg(theme.fg.primary)(new Date(mp.rxTime * 1000).toLocaleTimeString())}`);
-      if (mp.rxRssi) lines.push(t`${fg(theme.fg.secondary)("RSSI:")} ${fg(theme.fg.primary)(`${mp.rxRssi} dBm`)}`);
-      if (mp.rxSnr !== undefined) lines.push(t`${fg(theme.fg.secondary)("SNR:")} ${fg(theme.fg.primary)(`${mp.rxSnr.toFixed(2)} dB`)}`);
+      if (mp.hopStart) result = t`${result}
+${fg(theme.fg.secondary)("Hop Start:")} ${fg(theme.fg.primary)(mp.hopStart.toString())}`;
+      if (mp.rxTime) result = t`${result}
+${fg(theme.fg.secondary)("RX Time:")} ${fg(theme.fg.primary)(new Date(mp.rxTime * 1000).toLocaleTimeString())}`;
+      if (mp.rxRssi) result = t`${result}
+${fg(theme.fg.secondary)("RSSI:")} ${fg(theme.fg.primary)(`${mp.rxRssi} dBm`)}`;
+      if (mp.rxSnr !== undefined) result = t`${result}
+${fg(theme.fg.secondary)("SNR:")} ${fg(theme.fg.primary)(`${mp.rxSnr.toFixed(2)} dB`)}`;
 
       if (typeof p.payload === "string") {
-        lines.push(t`${fg(theme.fg.secondary)("Payload:")} ${fg(theme.fg.accent)(`"${p.payload}"`)}`);
+        result = t`${result}
+${fg(theme.fg.secondary)("Payload:")} ${fg(theme.fg.accent)(`"${p.payload}"`)}`;
       } else if (p.portnum === Portnums.PortNum.TRACEROUTE_APP && p.payload && typeof p.payload === "object" && "route" in p.payload) {
         const route = (p.payload as Mesh.RouteDiscovery).route;
         if (route.length > 0) {
           const hops = route.map((n: number) => formatNodeId(n)).join(" → ");
-          lines.push(t`${fg(theme.fg.secondary)("Route:")} ${fg(theme.packet.traceroute)(hops)}`);
+          result = t`${result}
+${fg(theme.fg.secondary)("Route:")} ${fg(theme.packet.traceroute)(hops)}`;
         } else {
-          lines.push(t`${fg(theme.fg.secondary)("Route:")} ${fg(theme.fg.muted)("(direct)")}`);
+          result = t`${result}
+${fg(theme.fg.secondary)("Route:")} ${fg(theme.fg.muted)("(direct)")}`;
         }
       }
+      return result;
     } else if (fr.payloadVariant.case) {
-      lines.push(t`${fg(theme.fg.secondary)("Type:")} ${fg(theme.fg.primary)(fr.payloadVariant.case.toUpperCase())}`);
+      return t`${fg(theme.fg.secondary)("Type:")} ${fg(theme.fg.primary)(fr.payloadVariant.case.toUpperCase())}`;
     }
 
-    return lines.join("\n");
+    return t`${fg(theme.fg.muted)("Unknown packet")}`;
   }
 
-  private renderProtobuf(): string {
+  private renderProtobuf() {
     const p = this.packet!;
-    const lines: string[] = [];
 
     if (p.decodeError) {
-      lines.push(t`${fg(theme.packet.encrypted)("Decode Error:")} ${p.decodeError}`);
-      return lines.join("\n");
+      return t`${fg(theme.packet.encrypted)("Decode Error:")} ${p.decodeError}`;
     }
 
     const fr = p.fromRadio;
     if (!fr) return t`${fg(theme.fg.muted)("Empty packet")}`;
 
-    lines.push(t`${fg(theme.fg.accent)("FromRadio")}`);
-    lines.push(t`${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("id:")} ${fg(theme.fg.primary)(fr.id.toString())}`);
+    let result = t`${fg(theme.fg.accent)("FromRadio")}
+${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("id:")} ${fg(theme.fg.primary)(fr.id.toString())}`;
 
     if (fr.payloadVariant.case === "packet" && p.meshPacket) {
       const mp = p.meshPacket;
-      lines.push(t`${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("packet:")} ${fg(theme.fg.accent)("MeshPacket")}`);
-      lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("from:")} ${fg(theme.fg.primary)(mp.from.toString())} ${fg(theme.fg.muted)(`(${formatNodeId(mp.from)})`)}`);
-      lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("to:")} ${fg(theme.fg.primary)(mp.to.toString())} ${fg(theme.fg.muted)(`(${mp.to === 0xffffffff ? "^all" : formatNodeId(mp.to)})`)}`);
-      lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("channel:")} ${fg(theme.fg.primary)(mp.channel.toString())}`);
-      lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("id:")} ${fg(theme.fg.primary)(mp.id.toString())}`);
-      lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("hop_limit:")} ${fg(theme.fg.primary)(mp.hopLimit.toString())}`);
-      if (mp.hopStart) lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("hop_start:")} ${fg(theme.fg.primary)(mp.hopStart.toString())}`);
-      if (mp.rxSnr !== undefined) lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("rx_snr:")} ${fg(theme.fg.primary)(mp.rxSnr.toFixed(2))}`);
-      if (mp.rxRssi) lines.push(t`   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("rx_rssi:")} ${fg(theme.fg.primary)(mp.rxRssi.toString())}`);
+      const to = mp.to === 0xffffffff ? "^all" : formatNodeId(mp.to);
+      result = t`${result}
+${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("packet:")} ${fg(theme.fg.accent)("MeshPacket")}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("from:")} ${fg(theme.fg.primary)(mp.from.toString())} ${fg(theme.fg.muted)(`(${formatNodeId(mp.from)})`)}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("to:")} ${fg(theme.fg.primary)(mp.to.toString())} ${fg(theme.fg.muted)(`(${to})`)}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("channel:")} ${fg(theme.fg.primary)(mp.channel.toString())}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("id:")} ${fg(theme.fg.primary)(mp.id.toString())}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("hop_limit:")} ${fg(theme.fg.primary)(mp.hopLimit.toString())}`;
+
+      if (mp.hopStart) result = t`${result}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("hop_start:")} ${fg(theme.fg.primary)(mp.hopStart.toString())}`;
+      if (mp.rxSnr !== undefined) result = t`${result}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("rx_snr:")} ${fg(theme.fg.primary)(mp.rxSnr.toFixed(2))}`;
+      if (mp.rxRssi) result = t`${result}
+   ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("rx_rssi:")} ${fg(theme.fg.primary)(mp.rxRssi.toString())}`;
 
       if (mp.payloadVariant.case === "decoded") {
         const decoded = mp.payloadVariant.value;
         const portName = Portnums.PortNum[decoded.portnum] || `PORT_${decoded.portnum}`;
-        lines.push(t`   ${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("decoded:")} ${fg(theme.fg.accent)("Data")}`);
-        lines.push(t`      ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("portnum:")} ${fg(theme.fg.primary)(portName)}`);
-        lines.push(t`      ${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("payload:")} ${fg(theme.fg.primary)(`[${decoded.payload.length} bytes]`)}`);
+        result = t`${result}
+   ${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("decoded:")} ${fg(theme.fg.accent)("Data")}
+      ${fg(theme.fg.muted)("├─")} ${fg(theme.fg.secondary)("portnum:")} ${fg(theme.fg.primary)(portName)}
+      ${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("payload:")} ${fg(theme.fg.primary)(`[${decoded.payload.length} bytes]`)}`;
       } else if (mp.payloadVariant.case === "encrypted") {
-        lines.push(t`   ${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("encrypted:")} ${fg(theme.packet.encrypted)(`[${mp.payloadVariant.value.length} bytes]`)}`);
+        result = t`${result}
+   ${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)("encrypted:")} ${fg(theme.packet.encrypted)(`[${mp.payloadVariant.value.length} bytes]`)}`;
       }
     } else if (fr.payloadVariant.case) {
-      lines.push(t`${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)(fr.payloadVariant.case)}`);
+      result = t`${result}
+${fg(theme.fg.muted)("└─")} ${fg(theme.fg.secondary)(fr.payloadVariant.case)}`;
     }
 
-    return lines.join("\n");
+    return result;
   }
 
-  private renderHex(): string {
+  private renderHex() {
     const p = this.packet!;
     const hexLines = formatHexDump(p.raw);
-    return hexLines.map((line) => t`${fg(theme.fg.primary)(line)}`).join("\n");
+    return t`${fg(theme.fg.primary)(hexLines.join("\n"))}`;
   }
 }
