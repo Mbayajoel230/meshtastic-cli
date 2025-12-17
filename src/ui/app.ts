@@ -63,9 +63,22 @@ export class App {
     this.renderer.setBackgroundColor(theme.bg.primary);
     this.createLayout();
     this.setupKeyHandlers();
+    this.renderPersistedPackets();
     this.packetStore.onPacket((p) => this.running && this.handlePacket(p));
     this.nodeStore.startPeriodicUpdates(1000);
     this.startTransport();
+  }
+
+  private renderPersistedPackets() {
+    const packets = this.packetStore.getAll();
+    for (const packet of packets) {
+      this.addPacketRow(packet);
+    }
+    if (packets.length > 0) {
+      this.selectedIndex = packets.length - 1;
+      this.updatePacketSelection();
+    }
+    this.updateStatus();
   }
 
   private async stop() {

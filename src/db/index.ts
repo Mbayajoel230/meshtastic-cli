@@ -250,7 +250,21 @@ export function getMessages(channel?: number, limit = 100): DbMessage[] {
   }));
 }
 
-export function insertPacket(packet: { packetId: number; fromNode: number; toNode: number; channel: number; portnum: number; timestamp: number; rxTime?: number; rxSnr?: number; rxRssi?: number; raw: Uint8Array }) {
+export interface DbPacket {
+  id?: number;
+  packetId: number;
+  fromNode: number;
+  toNode: number;
+  channel: number;
+  portnum?: number;
+  timestamp: number;
+  rxTime?: number;
+  rxSnr?: number;
+  rxRssi?: number;
+  raw: Uint8Array;
+}
+
+export function insertPacket(packet: DbPacket) {
   db.run(`
     INSERT INTO packets (packet_id, from_node, to_node, channel, portnum, timestamp, rx_time, rx_snr, rx_rssi, raw)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -259,13 +273,42 @@ export function insertPacket(packet: { packetId: number; fromNode: number; toNod
     packet.fromNode,
     packet.toNode,
     packet.channel,
-    packet.portnum,
+    packet.portnum ?? null,
     packet.timestamp,
     packet.rxTime ?? null,
     packet.rxSnr ?? null,
     packet.rxRssi ?? null,
     packet.raw,
   ]);
+  prunePackets();
+}
+
+export function getPackets(limit = 1000): DbPacket[] {
+  const rows = db.query(`SELECT * FROM packets ORDER BY timestamp DESC LIMIT ?`).all(limit) as any[];
+  return rows.reverse().map((row) => ({
+    id: row.id,
+    packetId: row.packet_id,
+    fromNode: row.from_node,
+    toNode: row.to_node,
+    channel: row.channel,
+    portnum: row.portnum,
+    timestamp: row.timestamp,
+    rxTime: row.rx_time,
+    rxSnr: row.rx_snr,
+    rxRssi: row.rx_rssi,
+    raw: row.raw as Uint8Array,
+  }));
+}
+
+export function prunePackets(maxPackets = 1000) {
+  const count = (db.query(`SELECT COUNT(*) as count FROM packets`).get() as any).count;
+  if (count > maxPackets) {
+    db.run(`DELETE FROM packets WHERE id IN (SELECT id FROM packets ORDER BY timestamp ASC LIMIT ?)`, [count - maxPackets]);
+  }
+}
+
+export function getPacketCount(): number {
+  return (db.query(`SELECT COUNT(*) as count FROM packets`).get() as any).count;
 }
 
 export { db };
