@@ -52,10 +52,13 @@ export class NodesPanel {
     this.container.add(header);
     this.container.add(this.scrollBox);
 
-    this.nodeStore.onUpdate((nodes) => {
-      this.nodes = nodes;
-      this.renderNodes();
-    });
+    // Defer subscription to avoid rendering during construction
+    setTimeout(() => {
+      this.nodeStore.onUpdate((nodes) => {
+        this.nodes = nodes;
+        this.renderNodes();
+      });
+    }, 0);
   }
 
   get element(): BoxRenderable {
@@ -119,7 +122,7 @@ export class NodesPanel {
     return row;
   }
 
-  private formatNodeLine(node: NodeData): string {
+  private formatNodeLine(node: NodeData) {
     const id = formatNodeId(node.num).padEnd(10);
     const name = (node.shortName || node.longName?.slice(0, 12) || "???").padEnd(18);
     const hops = node.hopsAway !== undefined ? node.hopsAway.toString().padStart(2) : " ?";
