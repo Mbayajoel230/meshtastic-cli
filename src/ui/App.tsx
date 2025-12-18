@@ -1068,6 +1068,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
             const chBinary = adminHelper.createGetChannelRequest(i, opts);
             await transport.send(chBinary);
           }
+          setConfigLoading(false);
           return;
         case "user":
           binary = adminHelper.createGetOwnerRequest(opts);

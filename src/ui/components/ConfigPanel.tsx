@@ -1,8 +1,27 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Text } from "ink";
 import { theme } from "../theme";
 import { Config, ModuleConfig, Admin, Mesh, Channel } from "@meshtastic/protobufs";
 import { CONFIG_TYPE_LABELS, MODULE_CONFIG_TYPE_LABELS, ConfigType, ModuleConfigType } from "../../protocol/admin";
+
+// Animated loading spinner
+function LoadingSpinner({ text = "Loading" }: { text?: string }) {
+  const [frame, setFrame] = useState(0);
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((f) => (f + 1) % frames.length);
+    }, 80);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Text color={theme.fg.muted}>
+      <Text color={theme.fg.accent}>{frames[frame]}</Text> {text}...
+    </Text>
+  );
+}
 
 export type ConfigSection =
   | "menu"
@@ -158,17 +177,19 @@ export function ConfigPanel({
   }
 
   // Render specific config section
+  const sectionLabel = MENU_ITEMS.find((m) => m.key === section)?.label || section.toUpperCase();
+
   return (
     <Box flexDirection="column" height={height} width="100%">
       <Box paddingX={1} borderBottom borderColor={theme.border.normal}>
-        <Text color={theme.fg.accent} bold>
-          {MENU_ITEMS.find((m) => m.key === section)?.label || section.toUpperCase()} CONFIG
-        </Text>
-        <Text color={theme.fg.muted}> (Esc to go back)</Text>
+        <Text color={theme.fg.muted}>CONFIG</Text>
+        <Text color={theme.fg.muted}> {">"} </Text>
+        <Text color={theme.fg.accent} bold>{sectionLabel}</Text>
+        <Text color={theme.fg.secondary}>  Esc=back Enter=refresh</Text>
       </Box>
       <Box flexDirection="column" paddingX={1} flexGrow={1}>
         {loading ? (
-          <Text color={theme.fg.muted}>Loading...</Text>
+          <LoadingSpinner text={`Loading ${sectionLabel.toLowerCase()}`} />
         ) : (
           <ConfigSectionView
             section={section}
@@ -227,7 +248,7 @@ function ConfigMenu({
     <Box flexDirection="column" height={height} width="100%">
       <Box paddingX={1}>
         <Text color={theme.fg.accent} bold>CONFIG</Text>
-        {loading && <Text color={theme.fg.muted}> (loading...)</Text>}
+        {loading && <Text color={theme.fg.muted}> <LoadingSpinner text="loading" /></Text>}
         {batchEditCount !== undefined && batchEditCount > 0 && (
           <Text color={theme.packet.encrypted}> [{batchEditCount} unsaved change{batchEditCount !== 1 ? "s" : ""}]</Text>
         )}
