@@ -1,5 +1,26 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Database files
+*.db
+*.db-wal
+*.db-shm
+
+# Logs
 *.log
+
+# OS files
 .DS_Store
-meshtastic.db
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
