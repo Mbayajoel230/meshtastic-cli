@@ -320,11 +320,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
     // Quit - handle q, Q, and Ctrl+C
     if ((input === "q" || input === "Q") && mode !== "chat") {
       exit();
-      return;
+      process.exit(0);
     }
     if (key.ctrl && input === "c") {
       exit();
-      return;
+      process.exit(0);
     }
 
     // Toggle help
