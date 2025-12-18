@@ -1,120 +1,151 @@
 import { Database } from "bun:sqlite";
 import { join } from "path";
 import { homedir } from "os";
-import { mkdirSync, existsSync } from "fs";
+import { mkdirSync, existsSync, unlinkSync } from "fs";
 
 const DB_DIR = join(homedir(), ".config", "meshtastic-cli");
-const DB_PATH = join(DB_DIR, "data.db");
 
-if (!existsSync(DB_DIR)) {
-  mkdirSync(DB_DIR, { recursive: true });
+let db: Database;
+let currentSession = "default";
+
+export function getDbPath(session: string): string {
+  return join(DB_DIR, `${session}.db`);
 }
 
-const db = new Database(DB_PATH);
+export function initDb(session: string = "default") {
+  currentSession = session;
 
-// Enable WAL mode for better concurrent access
-db.run("PRAGMA journal_mode = WAL");
-db.run("PRAGMA busy_timeout = 5000");
+  if (!existsSync(DB_DIR)) {
+    mkdirSync(DB_DIR, { recursive: true });
+  }
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS nodes (
-    num INTEGER PRIMARY KEY,
-    user_id TEXT,
-    long_name TEXT,
-    short_name TEXT,
-    hw_model INTEGER,
-    latitude_i INTEGER,
-    longitude_i INTEGER,
-    altitude INTEGER,
-    snr REAL,
-    last_heard INTEGER,
-    battery_level INTEGER,
-    voltage REAL,
-    channel_utilization REAL,
-    air_util_tx REAL,
-    channel INTEGER,
-    via_mqtt INTEGER,
-    hops_away INTEGER,
-    is_favorite INTEGER,
-    updated_at INTEGER
-  )
-`);
+  const dbPath = getDbPath(session);
+  db = new Database(dbPath);
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    packet_id INTEGER,
-    from_node INTEGER,
-    to_node INTEGER,
-    channel INTEGER,
-    text TEXT,
-    timestamp INTEGER,
-    rx_time INTEGER,
-    rx_snr REAL,
-    rx_rssi INTEGER,
-    hop_limit INTEGER,
-    hop_start INTEGER,
-    status TEXT DEFAULT 'received'
-  )
-`);
+  // Enable WAL mode for better concurrent access
+  db.run("PRAGMA journal_mode = WAL");
+  db.run("PRAGMA busy_timeout = 5000");
 
-// Add status column if it doesn't exist (migration)
-try {
-  db.run(`ALTER TABLE messages ADD COLUMN status TEXT DEFAULT 'received'`);
-} catch {
-  // Column already exists
+  db.run(`
+    CREATE TABLE IF NOT EXISTS nodes (
+      num INTEGER PRIMARY KEY,
+      user_id TEXT,
+      long_name TEXT,
+      short_name TEXT,
+      hw_model INTEGER,
+      latitude_i INTEGER,
+      longitude_i INTEGER,
+      altitude INTEGER,
+      snr REAL,
+      last_heard INTEGER,
+      battery_level INTEGER,
+      voltage REAL,
+      channel_utilization REAL,
+      air_util_tx REAL,
+      channel INTEGER,
+      via_mqtt INTEGER,
+      hops_away INTEGER,
+      is_favorite INTEGER,
+      updated_at INTEGER
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      packet_id INTEGER,
+      from_node INTEGER,
+      to_node INTEGER,
+      channel INTEGER,
+      text TEXT,
+      timestamp INTEGER,
+      rx_time INTEGER,
+      rx_snr REAL,
+      rx_rssi INTEGER,
+      hop_limit INTEGER,
+      hop_start INTEGER,
+      status TEXT DEFAULT 'received'
+    )
+  `);
+
+  // Add status column if it doesn't exist (migration)
+  try {
+    db.run(`ALTER TABLE messages ADD COLUMN status TEXT DEFAULT 'received'`);
+  } catch {
+    // Column already exists
+  }
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS packets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      packet_id INTEGER,
+      from_node INTEGER,
+      to_node INTEGER,
+      channel INTEGER,
+      portnum INTEGER,
+      timestamp INTEGER,
+      rx_time INTEGER,
+      rx_snr REAL,
+      rx_rssi INTEGER,
+      raw BLOB
+    )
+  `);
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_packets_timestamp ON packets(timestamp)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS position_responses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      packet_id INTEGER,
+      from_node INTEGER,
+      requested_by INTEGER,
+      latitude_i INTEGER,
+      longitude_i INTEGER,
+      altitude INTEGER,
+      sats_in_view INTEGER,
+      timestamp INTEGER
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS traceroute_responses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      packet_id INTEGER,
+      from_node INTEGER,
+      requested_by INTEGER,
+      route TEXT,
+      snr_towards TEXT,
+      snr_back TEXT,
+      hop_limit INTEGER,
+      timestamp INTEGER
+    )
+  `);
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_position_responses_timestamp ON position_responses(timestamp)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_traceroute_responses_timestamp ON traceroute_responses(timestamp)`);
 }
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS packets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    packet_id INTEGER,
-    from_node INTEGER,
-    to_node INTEGER,
-    channel INTEGER,
-    portnum INTEGER,
-    timestamp INTEGER,
-    rx_time INTEGER,
-    rx_snr REAL,
-    rx_rssi INTEGER,
-    raw BLOB
-  )
-`);
+export function clearDb(session: string = "default") {
+  const dbPath = getDbPath(session);
+  const walPath = dbPath + "-wal";
+  const shmPath = dbPath + "-shm";
 
-db.run(`CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_packets_timestamp ON packets(timestamp)`);
+  // Close db if it's the current session
+  if (db && currentSession === session) {
+    db.close();
+  }
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS position_responses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    packet_id INTEGER,
-    from_node INTEGER,
-    requested_by INTEGER,
-    latitude_i INTEGER,
-    longitude_i INTEGER,
-    altitude INTEGER,
-    sats_in_view INTEGER,
-    timestamp INTEGER
-  )
-`);
+  // Delete database files
+  if (existsSync(dbPath)) unlinkSync(dbPath);
+  if (existsSync(walPath)) unlinkSync(walPath);
+  if (existsSync(shmPath)) unlinkSync(shmPath);
+}
 
-db.run(`
-  CREATE TABLE IF NOT EXISTS traceroute_responses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    packet_id INTEGER,
-    from_node INTEGER,
-    requested_by INTEGER,
-    route TEXT,
-    snr_towards TEXT,
-    snr_back TEXT,
-    hop_limit INTEGER,
-    timestamp INTEGER
-  )
-`);
-
-db.run(`CREATE INDEX IF NOT EXISTS idx_position_responses_timestamp ON position_responses(timestamp)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_traceroute_responses_timestamp ON traceroute_responses(timestamp)`);
+export function getSessionName(): string {
+  return currentSession;
+}
 
 export interface DbNode {
   num: number;
@@ -461,5 +492,3 @@ export function getLogResponses(limit = 100): LogResponse[] {
   all.sort((a, b) => a.timestamp - b.timestamp);
   return all.slice(-limit);
 }
-
-export { db };
