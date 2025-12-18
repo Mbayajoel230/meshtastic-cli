@@ -214,6 +214,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
   const [configOwner, setConfigOwner] = useState<Mesh.User>();
   const [configEditing, setConfigEditing] = useState<string | null>(null);
   const [configEditValue, setConfigEditValue] = useState("");
+  const [selectedChannelIndex, setSelectedChannelIndex] = useState(0);
   const [localMeshViewUrl, setLocalMeshViewUrl] = useState<string | undefined>(meshViewUrl);
   const [batchEditMode, setBatchEditMode] = useState(false);
   const [batchEditCount, setBatchEditCount] = useState(0);
@@ -1072,6 +1073,39 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
     }
   }, [myNodeNum, transport, configOwner, showNotification, batchEditMode, batchEditCount]);
 
+  const saveChannel = useCallback(async (channelIndex: number, updates: { name?: string; role?: number }) => {
+    if (!transport || !myNodeNum) return;
+    const channel = configChannels.find(c => c.index === channelIndex);
+    if (!channel) return;
+
+    try {
+      const updatedChannel = create(Mesh.ChannelSchema, {
+        index: channel.index,
+        role: updates.role !== undefined ? updates.role : channel.role,
+        settings: create(Mesh.ChannelSettingsSchema, {
+          ...channel.settings,
+          name: updates.name !== undefined ? updates.name : channel.settings?.name,
+        }),
+      });
+      const binary = adminHelper.createSetChannelRequest(updatedChannel, { myNodeNum });
+      await transport.send(binary);
+
+      // Update local state
+      setConfigChannels(prev => prev.map(c =>
+        c.index === channelIndex ? updatedChannel : c
+      ));
+
+      if (batchEditMode) {
+        setBatchEditCount(c => c + 1);
+        showNotification(`Queued channel ${channelIndex} change`);
+      } else {
+        showNotification(`Saved channel ${channelIndex}. Device may reboot.`);
+      }
+    } catch {
+      showNotification("Failed to save channel config");
+    }
+  }, [myNodeNum, transport, configChannels, showNotification, batchEditMode]);
+
   const startBatchEdit = useCallback(async () => {
     if (!transport || !myNodeNum) return;
     try {
@@ -1823,6 +1857,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
               setSetting("meshViewUrl", newUrl);
               setLocalMeshViewUrl(newUrl);
               showNotification(newUrl ? `MeshView URL set to ${newUrl}` : "MeshView URL cleared");
+            } else if (configSection === "channels" && configEditing?.startsWith("channel")) {
+              // Save channel name - parse channel index from field key like "channel0_name"
+              const match = configEditing.match(/^channel(\d+)_name$/);
+              if (match) {
+                const channelIndex = parseInt(match[1], 10);
+                saveChannel(channelIndex, { name: configEditValue });
+              }
             }
             setConfigEditing(null);
             setConfigEditValue("");
@@ -1867,6 +1908,37 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           setConfigEditing("meshViewUrl");
           setConfigEditValue(localMeshViewUrl || "");
           return;
+        }
+        // Channel navigation and editing
+        if (configSection === "channels" && configChannels.length > 0) {
+          // j/k to navigate channels
+          if (input === "j" || key.downArrow) {
+            setSelectedChannelIndex(i => Math.min(i + 1, configChannels.length - 1));
+            return;
+          }
+          if (input === "k" || key.upArrow) {
+            setSelectedChannelIndex(i => Math.max(i - 1, 0));
+            return;
+          }
+          // 'e' to edit channel name
+          if (input === "e") {
+            const channel = configChannels[selectedChannelIndex];
+            if (channel) {
+              setConfigEditing(`channel${channel.index}_name`);
+              setConfigEditValue(channel.settings?.name || "");
+            }
+            return;
+          }
+          // 'r' to cycle channel role
+          if (input === "r") {
+            const channel = configChannels[selectedChannelIndex];
+            if (channel) {
+              // Cycle: DISABLED(0) -> PRIMARY(1) -> SECONDARY(2) -> DISABLED(0)
+              const nextRole = (channel.role + 1) % 3;
+              saveChannel(channel.index, { role: nextRole });
+            }
+            return;
+          }
         }
       }
     }
@@ -2068,6 +2140,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
               meshViewUrl={localMeshViewUrl}
               editingField={configEditing}
               editValue={configEditValue}
+              selectedChannelIndex={selectedChannelIndex}
               batchEditMode={batchEditMode}
               batchEditCount={batchEditCount}
             />

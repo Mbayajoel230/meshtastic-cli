@@ -67,6 +67,8 @@ interface ConfigPanelProps {
   // Editing state
   editingField?: string | null;
   editValue?: string;
+  // Channel editing state
+  selectedChannelIndex?: number;
   // Batch edit state
   batchEditMode?: boolean;
   batchEditCount?: number;
@@ -363,7 +365,7 @@ function ConfigSectionView(props: Omit<ConfigPanelProps, "section" | "selectedMe
     case "paxcounter":
       return <PaxcounterConfigView config={props.paxcounterConfig} />;
     case "channels":
-      return <ChannelsConfigView channels={props.channels} />;
+      return <ChannelsConfigView channels={props.channels} selectedIndex={props.selectedChannelIndex} editingField={props.editingField} editValue={props.editValue} />;
     case "user":
       return <UserConfigView owner={props.owner} editingField={props.editingField} editValue={props.editValue} />;
     case "local":
@@ -717,25 +719,62 @@ function PaxcounterConfigView({ config }: { config?: ModuleConfig.ModuleConfig_P
   );
 }
 
-function ChannelsConfigView({ channels }: { channels?: Mesh.Channel[] }) {
+interface ChannelsConfigViewProps {
+  channels?: Mesh.Channel[];
+  selectedIndex?: number;
+  editingField?: string | null;
+  editValue?: string;
+}
+
+function ChannelsConfigView({ channels, selectedIndex = 0, editingField, editValue }: ChannelsConfigViewProps) {
   if (!channels || channels.length === 0) return <NoConfigLoaded />;
+
+  const selectedChannel = channels[selectedIndex];
+  const roleNames = ["DISABLED", "PRIMARY", "SECONDARY"];
+
   return (
     <Box flexDirection="column">
-      {channels.map((ch, i) => (
-        <Box key={i} flexDirection="column" marginBottom={1}>
-          <Box>
-            <Text color={theme.fg.accent} bold>Channel {ch.index}</Text>
-            <Text color={theme.fg.muted}> ({Channel.Channel_Role[ch.role]})</Text>
+      {/* Channel list */}
+      {channels.map((ch, i) => {
+        const isSelected = i === selectedIndex;
+        const roleName = Channel.Channel_Role[ch.role] || "UNKNOWN";
+        const name = ch.settings?.name || (ch.index === 0 ? "Primary" : `Channel ${ch.index}`);
+        return (
+          <Box key={i} backgroundColor={isSelected ? theme.bg.selected : undefined}>
+            <Text color={isSelected ? theme.fg.accent : theme.fg.muted}>{isSelected ? "▶ " : "  "}</Text>
+            <Text color={theme.fg.accent} bold>{`${ch.index}`.padEnd(3)}</Text>
+            <Text color={theme.fg.primary}>{name.padEnd(16)}</Text>
+            <Text color={theme.fg.muted}>{roleName}</Text>
           </Box>
-          {ch.settings && (
-            <Box flexDirection="column" paddingLeft={2}>
-              <ConfigRow label="Name" value={ch.settings.name || "Default"} />
-              <ConfigRow label="PSK" value={ch.settings.psk?.length ? `${ch.settings.psk.length} bytes` : "Default"} />
-              <ConfigRow label="Module Settings" value={ch.settings.moduleSettings ? "Configured" : "Default"} />
-            </Box>
-          )}
+        );
+      })}
+
+      {/* Selected channel details */}
+      {selectedChannel && (
+        <Box flexDirection="column" marginTop={1} paddingLeft={2} borderStyle="single" borderColor={theme.border.normal} borderTop borderBottom={false} borderLeft={false} borderRight={false}>
+          <Box marginBottom={1}>
+            <Text color={theme.fg.accent} bold>Channel {selectedChannel.index} Settings</Text>
+            <Text color={theme.fg.muted}> (j/k to select, e to edit name, r to change role)</Text>
+          </Box>
+          <EditableConfigRow
+            label="Name"
+            value={selectedChannel.settings?.name || ""}
+            fieldKey={`channel${selectedChannel.index}_name`}
+            editingField={editingField}
+            editValue={editValue}
+            hint="(e to edit)"
+          />
+          <Box>
+            <Text color={theme.fg.muted}>{"Role".padEnd(24)}</Text>
+            <Text color={theme.fg.accent}>{Channel.Channel_Role[selectedChannel.role]}</Text>
+            <Text color={theme.fg.muted}> (r to cycle: {roleNames.join(" → ")})</Text>
+          </Box>
+          <ConfigRow
+            label="PSK"
+            value={selectedChannel.settings?.psk?.length ? `${selectedChannel.settings.psk.length} bytes` : "Default (AQ==)"}
+          />
         </Box>
-      ))}
+      )}
     </Box>
   );
 }
