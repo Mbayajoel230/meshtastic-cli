@@ -1216,17 +1216,6 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         return;
       }
     }
-    // Only treat bare escape (not escape sequences like Home/End) as tab switch
-    const isBareEscape = key.escape && (input === "" || input === "\x1b");
-    if (mode === "chat" && isBareEscape && !chatInputFocused && !showEmojiSelector) {
-      setMode("packets");
-      return;
-    }
-    if (mode === "dm" && isBareEscape && !dmInputFocused) {
-      setMode("packets");
-      return;
-    }
-
     // Mode-specific keys
     if (mode === "packets") {
       const pageSize = Math.max(1, terminalHeight - inspectorHeight - 10);
