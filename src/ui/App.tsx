@@ -115,7 +115,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
     const unsubscribe = packetStore.onPacket((packet) => {
       processPacketForNodes(packet);
       setPackets((prev) => {
-        const next = [...prev, packet].slice(-50);
+        const next = [...prev, packet].slice(-5000);
         // Auto-scroll only if exactly at the last packet (not just near it)
         const lastIndex = prev.length - 1;
         const wasAtEnd = prev.length > 0 && selectedPacketIndexRef.current === lastIndex;
@@ -351,11 +351,19 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
 
     // Mode-specific keys
     if (mode === "packets") {
+      const pageSize = Math.max(1, terminalHeight - inspectorHeight - 10);
       if (input === "j" || key.downArrow) {
         setSelectedPacketIndex((i) => Math.min(i + 1, packets.length - 1));
       }
       if (input === "k" || key.upArrow) {
         setSelectedPacketIndex((i) => Math.max(i - 1, 0));
+      }
+      // Page up/down with Ctrl+u/d (vim-style) or Page keys
+      if ((key.ctrl && input === "d") || key.pageDown) {
+        setSelectedPacketIndex((i) => Math.min(i + pageSize, packets.length - 1));
+      }
+      if ((key.ctrl && input === "u") || key.pageUp) {
+        setSelectedPacketIndex((i) => Math.max(i - pageSize, 0));
       }
       // Jump to first/last packet (vim-style g/G)
       if (input === "g") {

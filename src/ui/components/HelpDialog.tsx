@@ -20,6 +20,8 @@ const globalKeys = [
 const packetKeys = [
   { key: "j / ↓", desc: "Next packet" },
   { key: "k / ↑", desc: "Previous packet" },
+  { key: "Ctrl+d/PgDn", desc: "Page down" },
+  { key: "Ctrl+u/PgUp", desc: "Page up" },
   { key: "g", desc: "First packet" },
   { key: "G", desc: "Last packet (resume autoscroll)" },
   { key: "h / ←", desc: "Previous inspector tab" },
