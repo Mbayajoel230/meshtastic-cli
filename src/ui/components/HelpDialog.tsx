@@ -43,6 +43,7 @@ const nodeKeys = [
   { key: "e", desc: "Request telemetry" },
   { key: "d", desc: "Start DM with node" },
   { key: "D", desc: "Direct ping (hop=0)" },
+  { key: "u", desc: "Update from MeshView" },
   { key: "m", desc: "Open position in Maps" },
   { key: "l", desc: "Lookup hardware model" },
   { key: "f", desc: "Toggle favorite" },

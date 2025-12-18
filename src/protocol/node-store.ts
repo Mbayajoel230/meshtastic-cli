@@ -114,6 +114,50 @@ export class NodeStore {
     this.emit();
   }
 
+  updateFromMeshView(nodeNum: number, data: {
+    longName?: string;
+    shortName?: string;
+    hwModel?: string;
+    role?: string;
+    lastLat?: number;
+    lastLong?: number;
+    lastSeen?: number;
+  }) {
+    const existing = this.nodes.get(nodeNum) ?? ({ num: nodeNum, lastHeard: 0 } as NodeData);
+
+    // Map MeshView hw_model string to hwModel number (best effort)
+    let hwModelNum = existing.hwModel;
+    if (data.hwModel) {
+      // Try to match known hardware models
+      const hwModels: Record<string, number> = {
+        "UNSET": 0, "TLORA_V2": 1, "TLORA_V1": 2, "TLORA_V2_1_1P6": 3,
+        "TBEAM": 4, "HELTEC_V2_0": 5, "TBEAM_V0P7": 6, "T_ECHO": 7,
+        "TLORA_V1_1P3": 8, "RAK4631": 9, "HELTEC_V2_1": 10, "HELTEC_V1": 11,
+        "LILYGO_TBEAM_S3_CORE": 12, "RAK11200": 13, "NANO_G1": 14,
+        "TLORA_V2_1_1P8": 15, "STATION_G1": 25, "RAK11310": 26,
+        "HELTEC_V3": 43, "HELTEC_WSL_V3": 44, "TBEAM_S3_CORE": 47,
+        "RAK4631_V2": 48, "HELTEC_HT62": 57, "EBYTE_ESP32_S3": 60,
+        "TRACKER_T1000_E": 66, "HELTEC_WIRELESS_PAPER": 67,
+        "HELTEC_WIRELESS_PAPER_V1_0": 68, "HELTEC_WIRELESS_TRACKER": 69,
+        "SEEED_XIAO_S3": 78, "CARDKB": 80, "NANO_G2_ULTRA": 82,
+      };
+      hwModelNum = hwModels[data.hwModel] ?? existing.hwModel;
+    }
+
+    const updated: NodeData = {
+      ...existing,
+      longName: data.longName || existing.longName,
+      shortName: data.shortName || existing.shortName,
+      hwModel: hwModelNum,
+      latitudeI: data.lastLat ?? existing.latitudeI,
+      longitudeI: data.lastLong ?? existing.longitudeI,
+      lastHeard: data.lastSeen ? Math.floor(data.lastSeen / 1000000) : existing.lastHeard,
+    };
+    this.nodes.set(nodeNum, updated);
+    this.saveNode(updated);
+    this.emit();
+  }
+
   updatePosition(nodeNum: number, position: Mesh.Position) {
     const existing = this.nodes.get(nodeNum);
     if (existing) {

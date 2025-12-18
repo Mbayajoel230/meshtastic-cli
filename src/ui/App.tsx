@@ -865,6 +865,47 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
     }
   }, [myNodeNum, transport, nodes, nodeStore, showNotification]);
 
+  const fetchNodeFromMeshView = useCallback(async (nodeNum: number) => {
+    if (!localMeshViewUrl) {
+      showNotification("MeshView URL not configured");
+      return;
+    }
+
+    showNotification("Fetching from MeshView...");
+
+    try {
+      const response = await fetch(`${localMeshViewUrl}/api/nodes?days_active=30`);
+      if (!response.ok) {
+        showNotification(`MeshView error: ${response.status}`);
+        return;
+      }
+
+      const nodes = await response.json();
+      const nodeHex = `!${nodeNum.toString(16).padStart(8, "0")}`;
+
+      const found = nodes.find((n: { id?: string; node_id?: number }) =>
+        n.id === nodeHex || n.node_id === nodeNum
+      );
+
+      if (found) {
+        nodeStore.updateFromMeshView(nodeNum, {
+          longName: found.long_name,
+          shortName: found.short_name,
+          hwModel: found.hw_model,
+          role: found.role,
+          lastLat: found.last_lat,
+          lastLong: found.last_long,
+          lastSeen: found.last_seen_us,
+        });
+        showNotification(`Updated: ${found.short_name || found.long_name || nodeHex}`);
+      } else {
+        showNotification(`Node ${nodeHex} not found in MeshView`);
+      }
+    } catch (err) {
+      showNotification(`Failed to fetch: ${err instanceof Error ? err.message : "unknown error"}`);
+    }
+  }, [localMeshViewUrl, nodeStore, showNotification]);
+
   const requestConfigSection = useCallback(async (section: ConfigSection) => {
     if (!transport || !myNodeNum) return;
     setConfigLoading(true);
@@ -1298,6 +1339,10 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       }
       if (input === "i" && selectedNode && selectedNode.num !== myNodeNum) {
         toggleIgnoredNode(selectedNode.num);
+      }
+      // 'u' to update node info from MeshView
+      if (input === "u" && selectedNode) {
+        fetchNodeFromMeshView(selectedNode.num);
       }
     } else if (mode === "log") {
       if (input === "j" || key.downArrow) {
