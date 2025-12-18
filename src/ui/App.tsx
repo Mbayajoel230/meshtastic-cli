@@ -302,8 +302,12 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
 
   // Key input handling
   useInput((input, key) => {
-    // Quit
-    if (input === "q" && mode !== "chat") {
+    // Quit - handle q, Q, and Ctrl+C
+    if ((input === "q" || input === "Q") && mode !== "chat") {
+      exit();
+      return;
+    }
+    if (key.ctrl && input === "c") {
       exit();
       return;
     }

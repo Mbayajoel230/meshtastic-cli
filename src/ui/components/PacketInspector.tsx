@@ -583,7 +583,7 @@ function renderFromRadioDetails(fr: Mesh.FromRadio): React.ReactNode[] | null {
   return lines.length > 0 ? lines : null;
 }
 
-// === JSON VIEW ===
+// === JSON VIEW with syntax highlighting ===
 function JsonView({ packet, height }: { packet: DecodedPacket; height: number }) {
   const jsonStr = formatPacketJson(packet);
   const jsonLines = jsonStr.split("\n").slice(0, height);
@@ -591,10 +591,70 @@ function JsonView({ packet, height }: { packet: DecodedPacket; height: number })
   return (
     <Box flexDirection="column">
       {jsonLines.map((line, i) => (
-        <Text key={i} color={getJsonLineColor(line)}>{line}</Text>
+        <Box key={i}>{renderJsonLine(line)}</Box>
       ))}
     </Box>
   );
+}
+
+function renderJsonLine(line: string): React.ReactNode {
+  const elements: React.ReactNode[] = [];
+  let idx = 0;
+  let keyIdx = 0;
+
+  // Match indentation
+  const indentMatch = line.match(/^(\s*)/);
+  if (indentMatch && indentMatch[1]) {
+    elements.push(<Text key={keyIdx++} color={theme.fg.muted}>{indentMatch[1]}</Text>);
+    idx = indentMatch[1].length;
+  }
+
+  const rest = line.slice(idx);
+
+  // Tokenize the rest of the line
+  const tokenRegex = /("(?:\\.|[^"\\])*")\s*(:)?|(\d+\.?\d*)|(\btrue\b|\bfalse\b)|(\bnull\b)|([{}\[\],])/g;
+  let lastIdx = 0;
+  let match;
+
+  while ((match = tokenRegex.exec(rest)) !== null) {
+    // Add any text before this match
+    if (match.index > lastIdx) {
+      elements.push(<Text key={keyIdx++} color={theme.fg.muted}>{rest.slice(lastIdx, match.index)}</Text>);
+    }
+
+    if (match[1]) {
+      // String - check if it's a key (followed by colon)
+      if (match[2]) {
+        // It's a key
+        elements.push(<Text key={keyIdx++} color={theme.data.coords}>{match[1]}</Text>);
+        elements.push(<Text key={keyIdx++} color={theme.fg.muted}>:</Text>);
+      } else {
+        // It's a string value
+        elements.push(<Text key={keyIdx++} color={theme.data.quote}>{match[1]}</Text>);
+      }
+    } else if (match[3]) {
+      // Number
+      elements.push(<Text key={keyIdx++} color={theme.data.voltage}>{match[3]}</Text>);
+    } else if (match[4]) {
+      // Boolean
+      elements.push(<Text key={keyIdx++} color={theme.data.battery}>{match[4]}</Text>);
+    } else if (match[5]) {
+      // Null
+      elements.push(<Text key={keyIdx++} color={theme.data.percent}>{match[5]}</Text>);
+    } else if (match[6]) {
+      // Brackets/punctuation
+      elements.push(<Text key={keyIdx++} color={theme.fg.muted}>{match[6]}</Text>);
+    }
+
+    lastIdx = match.index + match[0].length;
+  }
+
+  // Add any remaining text
+  if (lastIdx < rest.length) {
+    elements.push(<Text key={keyIdx++} color={theme.fg.muted}>{rest.slice(lastIdx)}</Text>);
+  }
+
+  return elements.length > 0 ? <>{elements}</> : <Text color={theme.fg.muted}>{line}</Text>;
 }
 
 function formatPacketJson(packet: DecodedPacket): string {
@@ -645,19 +705,6 @@ function replacer(_key: string, value: unknown): unknown {
     return value.toString();
   }
   return value;
-}
-
-function getJsonLineColor(line: string): string {
-  if (line.includes('":')) {
-    return theme.fg.muted;
-  }
-  if (line.includes('"')) {
-    return theme.packet.message;
-  }
-  if (/\d/.test(line) && !line.includes('"')) {
-    return theme.fg.primary;
-  }
-  return theme.fg.secondary;
 }
 
 // === HEX VIEW ===
