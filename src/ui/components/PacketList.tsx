@@ -55,7 +55,7 @@ export function PacketList({ packets, selectedIndex, nodeStore, height = 20, isF
   return (
     <Box flexDirection="column" width="100%">
       {isFollowing && (
-        <Box paddingLeft={1}>
+        <Box justifyContent="center">
           <LiveIndicator />
         </Box>
       )}
