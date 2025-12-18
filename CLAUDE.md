@@ -5,6 +5,12 @@
 - Minimize comments - code should be self-explanatory
 - Use official npm packages, not local references
 
+## Design
+- **Cypherpunk aesthetic**: Use vibrant colors to differentiate data types
+- Colors should be bold and varied - neon greens, cyans, magentas, oranges
+- Each piece of information in packet rows should have distinct coloring
+- Think: terminal hacker vibes, Matrix-style data streams
+
 ## Testing
 - Test node available at http://192.168.0.123 (live Meshtastic node)
 
