@@ -116,8 +116,9 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
       processPacketForNodes(packet);
       setPackets((prev) => {
         const next = [...prev, packet].slice(-50);
-        // Auto-scroll only if viewing the last packet
-        const wasAtEnd = selectedPacketIndexRef.current >= prev.length - 1;
+        // Auto-scroll only if exactly at the last packet (not just near it)
+        const lastIndex = prev.length - 1;
+        const wasAtEnd = prev.length > 0 && selectedPacketIndexRef.current === lastIndex;
         if (wasAtEnd) {
           setSelectedPacketIndex(next.length - 1);
         }
