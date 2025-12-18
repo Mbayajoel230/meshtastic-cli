@@ -11,7 +11,17 @@ function stringWidth(str: string): number {
   for (const char of str) {
     const code = char.codePointAt(0) || 0;
     // Emoji and wide characters take 2 spaces
-    if (code > 0x1F000 || (code >= 0x2600 && code <= 0x27BF) || (code >= 0x1F300 && code <= 0x1F9FF)) {
+    // Covers: Misc Technical (23xx), Enclosed Alphanumerics (24xx), Geometric (25xx),
+    // Misc Symbols (26xx), Dingbats (27xx), Misc Symbols (2Bxx), and SMP emojis (1Fxxx)
+    if (
+      code > 0x1F000 ||
+      (code >= 0x2300 && code <= 0x23FF) ||
+      (code >= 0x2460 && code <= 0x24FF) ||
+      (code >= 0x25A0 && code <= 0x25FF) ||
+      (code >= 0x2600 && code <= 0x27BF) ||
+      (code >= 0x2B00 && code <= 0x2BFF) ||
+      (code >= 0x3000 && code <= 0x303F)
+    ) {
       width += 2;
     } else {
       width += 1;

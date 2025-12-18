@@ -584,15 +584,23 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
         setMode("nodes");
       }
     } else if (mode === "nodes") {
+      const nodePageSize = Math.max(1, terminalHeight - 16);
       if (input === "j" || key.downArrow) {
         setSelectedNodeIndex((i) => Math.min(i + 1, nodes.length - 1));
       }
       if (input === "k" || key.upArrow) {
         setSelectedNodeIndex((i) => Math.max(i - 1, 0));
       }
+      // Page up/down
+      if ((key.ctrl && input === "d") || key.pageDown) {
+        setSelectedNodeIndex((i) => Math.min(i + nodePageSize, nodes.length - 1));
+      }
+      if ((key.ctrl && input === "u") || key.pageUp) {
+        setSelectedNodeIndex((i) => Math.max(i - nodePageSize, 0));
+      }
       // Home/End keys
-      const isNodeHome = input === "\x1b[H" || input === "\x1b[1~" || input === "\x1bOH";
-      const isNodeEnd = input === "\x1b[F" || input === "\x1b[4~" || input === "\x1bOF";
+      const isNodeHome = input === "g" || input === "\x1b[H" || input === "\x1b[1~" || input === "\x1bOH";
+      const isNodeEnd = input === "G" || input === "\x1b[F" || input === "\x1b[4~" || input === "\x1bOF";
       if (isNodeHome) {
         setSelectedNodeIndex(0);
       }
