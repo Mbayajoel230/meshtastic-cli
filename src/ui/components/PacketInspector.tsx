@@ -234,7 +234,7 @@ function renderPayloadDetails(packet: DecodedPacket, nodeStore: NodeStore): Reac
         {user.role !== undefined && user.role !== 0 && (
           <>
             <Text color={theme.fg.muted}>  Role: </Text>
-            <Text color={theme.fg.secondary}>{Mesh.Config_DeviceConfig_Role[user.role] || user.role}</Text>
+            <Text color={theme.fg.secondary}>{String(user.role)}</Text>
           </>
         )}
       </Box>

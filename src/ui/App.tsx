@@ -11,6 +11,7 @@ import { PacketList } from "./components/PacketList";
 import { PacketInspector, InspectorTab } from "./components/PacketInspector";
 import { NodesPanel } from "./components/NodesPanel";
 import { ChatPanel } from "./components/ChatPanel";
+import { HelpDialog } from "./components/HelpDialog";
 import * as db from "../db";
 import { toBinary, create } from "@bufbuild/protobuf";
 import { formatNodeId } from "../utils/hex";
@@ -36,6 +37,8 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
   const [nodes, setNodes] = useState<NodeData[]>([]);
   const [selectedNodeIndex, setSelectedNodeIndex] = useState(0);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("info");
+  const [inspectorHeight, setInspectorHeight] = useState(12);
+  const [showHelp, setShowHelp] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(stdout?.rows || 24);
   const [spinnerFrame, setSpinnerFrame] = useState(0);
   const [connectError, setConnectError] = useState<string | null>(null);
@@ -320,6 +323,18 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
       return;
     }
 
+    // Toggle help
+    if (input === "?") {
+      setShowHelp((h) => !h);
+      return;
+    }
+
+    // Close help on any key if open
+    if (showHelp) {
+      setShowHelp(false);
+      return;
+    }
+
     // Mode switching
     if (mode !== "chat") {
       if (input === "1" || input === "p") { setMode("packets"); return; }
@@ -358,6 +373,13 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
           const idx = tabs.indexOf(t);
           return tabs[(idx + 1) % tabs.length];
         });
+      }
+      // Resize inspector pane
+      if (input === "+" || input === "=") {
+        setInspectorHeight((h) => Math.min(h + 2, terminalHeight - 10));
+      }
+      if (input === "-" || input === "_") {
+        setInspectorHeight((h) => Math.max(h - 2, 6));
       }
     } else if (mode === "nodes") {
       if (input === "j" || key.downArrow) {
@@ -409,14 +431,7 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
   const statusColor = status === "connected" ? theme.status.online : theme.status.offline;
   const nodeCount = nodes.length;
 
-  let helpText = "[1] packets [2] nodes [3] chat [q] quit";
-  if (mode === "packets") {
-    helpText = "[j/k] select | " + helpText;
-  } else if (mode === "nodes") {
-    helpText = "[j/k] select [t]raceroute | " + helpText;
-  } else if (mode === "chat") {
-    helpText = "[Tab] channel [Enter] send [Esc] exit";
-  }
+  const helpHint = "[?] Help";
 
   // Show connecting screen
   if (!transport) {
@@ -469,11 +484,11 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
                 packets={packets}
                 selectedIndex={selectedPacketIndex}
                 nodeStore={nodeStore}
-                height={terminalHeight - 17}
+                height={terminalHeight - inspectorHeight - 7}
               />
             </Box>
-            <Box height={12} borderStyle="single" borderColor={theme.border.normal}>
-              <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={10} nodeStore={nodeStore} />
+            <Box height={inspectorHeight} borderStyle="single" borderColor={theme.border.normal}>
+              <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={inspectorHeight - 2} nodeStore={nodeStore} />
             </Box>
           </>
         )}
@@ -510,9 +525,23 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
         <Text color={theme.fg.secondary}>{nodeCount} nodes</Text>
         <Text color={theme.fg.muted}> | </Text>
         <Text color={notification ? theme.fg.accent : theme.fg.muted}>
-          {notification || helpText}
+          {notification || helpHint}
         </Text>
       </Box>
+
+      {/* Help dialog overlay */}
+      {showHelp && (
+        <Box
+          position="absolute"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
+          <HelpDialog mode={mode} />
+        </Box>
+      )}
     </Box>
   );
 }
