@@ -126,7 +126,8 @@ export function NodesPanel({ nodes, selectedIndex, height = 20, inspectorHeight 
             {"SNR".padEnd(8)}
             {"BATT".padEnd(7)}
             {"HEARD".padEnd(10)}
-            {"LONG NAME"}
+            {"LONG NAME".padEnd(20)}
+            {"MODEL"}
           </Text>
         </Box>
 
@@ -184,6 +185,9 @@ function NodeRow({ node, isSelected }: NodeRowProps) {
   }
 
   const favStar = node.isFavorite ? "★" : " ";
+  const hwModel = node.hwModel !== undefined
+    ? (Mesh.HardwareModel[node.hwModel] || `HW_${node.hwModel}`).replace("_", " ")
+    : "";
 
   return (
     <Box backgroundColor={bgColor} paddingX={1}>
@@ -195,7 +199,8 @@ function NodeRow({ node, isSelected }: NodeRowProps) {
         <Text color={getSnrColor(node.snr)}>{snr.padEnd(8)}</Text>
         <Text color={getBatteryColor(node.batteryLevel)}>{battery.padEnd(7)}</Text>
         <Text color={theme.fg.secondary}>{lastHeard.padEnd(10)}</Text>
-        <Text color={theme.fg.primary}>{longName}</Text>
+        <Text color={theme.fg.primary}>{longName.slice(0, 18).padEnd(20)}</Text>
+        <Text color={theme.data.hardware}>{hwModel}</Text>
       </Text>
     </Box>
   );
