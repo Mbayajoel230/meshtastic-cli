@@ -121,12 +121,11 @@ export function NodesPanel({ nodes, selectedIndex, height = 20, inspectorHeight 
           <Text color={theme.fg.muted}>{"NAME".padEnd(8)}</Text>
           <Text color={theme.fg.muted}>{"ID".padEnd(11)}</Text>
           <Text color={theme.fg.muted}>{"★ "}</Text>
-          <Text color={theme.fg.muted}>{"R "}</Text>
           <Text color={theme.fg.muted}>{"HOP".padEnd(4)}</Text>
           <Text color={theme.fg.muted}>{"SNR".padEnd(8)}</Text>
           <Text color={theme.fg.muted}>{"BAT".padEnd(5)}</Text>
           <Text color={theme.fg.muted}>{"HEARD".padEnd(6)}</Text>
-          <Text color={theme.fg.muted}>{" "}</Text>
+          <Text color={theme.fg.muted}>{"R "}</Text>
           <Box flexGrow={1}><Text color={theme.fg.muted}>LONG NAME</Text></Box>
           <Box width={16}><Text color={theme.fg.muted}>MODEL</Text></Box>
         </Box>
@@ -195,12 +194,11 @@ function NodeRow({ node, isSelected }: NodeRowProps) {
       <Text color={nameColor}>{padEndVisual(displayName, 8)}</Text>
       <Text color={theme.fg.muted}>{nodeId.padEnd(11)}</Text>
       <Text color="#ffcc00">{favStar}</Text><Text>{" "}</Text>
-      <Text color={getRoleColor(node.role)}>{role} </Text>
       <Text color={getHopsColor(node.hopsAway)}>{hops.padEnd(4)}</Text>
       <Text color={getSnrColor(node.snr)}>{snr.padStart(7)} </Text>
       <Text color={getBatteryColor(node.batteryLevel, node.voltage)}>{battery.padEnd(5)}</Text>
       <Text color={theme.fg.secondary}>{lastHeard.padEnd(6)}</Text>
-      <Text color={theme.fg.muted}>{" "}</Text>
+      <Text color={getRoleColor(node.role)}>{role} </Text>
       <Box flexGrow={1}><Text color={theme.fg.primary} wrap="truncate">{longName}</Text></Box>
       <Box width={16}><Text color={theme.data.hardware} wrap="truncate">{hwModel}</Text></Box>
     </Box>
