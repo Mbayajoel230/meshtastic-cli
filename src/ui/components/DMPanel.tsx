@@ -57,16 +57,17 @@ export function DMPanel({
   height,
   width,
 }: DMPanelProps) {
-  // Split pane: conversation list (top), messages (bottom)
+  // Layout: header (1) + convo list (variable) + separator (1) + messages (variable) + input (3)
   const inputHeight = 3;
   const headerHeight = 1;
-  const listHeight = Math.max(3, Math.floor((height - inputHeight - headerHeight) * 0.35));
-  const messageAreaHeight = Math.max(3, height - listHeight - inputHeight - headerHeight - 1);
+  const separatorHeight = 1;
+  const listHeight = Math.max(3, Math.floor((height - inputHeight - headerHeight - separatorHeight) * 0.3));
+  const messageAreaHeight = Math.max(3, height - listHeight - inputHeight - headerHeight - separatorHeight);
 
   const selectedConvo = conversations[selectedConvoIndex];
 
   // Calculate scroll offset for conversation list
-  const visibleConvoCount = Math.max(1, listHeight - 1);
+  const visibleConvoCount = Math.max(1, listHeight);
   let convoScrollOffset = 0;
   if (conversations.length > visibleConvoCount) {
     const halfView = Math.floor(visibleConvoCount / 2);
@@ -77,20 +78,24 @@ export function DMPanel({
   }
   const visibleConvos = conversations.slice(convoScrollOffset, convoScrollOffset + visibleConvoCount);
 
-  // Calculate scroll offset for messages
+  // Calculate scroll offset for messages - account for header line in message area
+  const visibleMsgCount = Math.max(1, messageAreaHeight - 1);
   let msgScrollOffset = 0;
-  if (messages.length > messageAreaHeight) {
+  if (messages.length > visibleMsgCount) {
     if (selectedMessageIndex < 0) {
-      msgScrollOffset = messages.length - messageAreaHeight;
+      msgScrollOffset = messages.length - visibleMsgCount;
     } else {
-      const halfView = Math.floor(messageAreaHeight / 2);
+      const halfView = Math.floor(visibleMsgCount / 2);
       msgScrollOffset = Math.max(0, Math.min(
         selectedMessageIndex - halfView,
-        messages.length - messageAreaHeight
+        messages.length - visibleMsgCount
       ));
     }
   }
-  const visibleMessages = messages.slice(msgScrollOffset, msgScrollOffset + messageAreaHeight);
+  const visibleMessages = messages.slice(msgScrollOffset, msgScrollOffset + visibleMsgCount);
+
+  // Available width for message text: total width - padding (2) - prefix - status indicator (6)
+  const textWidth = Math.max(20, width - 2 - PREFIX_WIDTH - 6);
 
   return (
     <Box flexDirection="column" width="100%" height={height}>
@@ -101,11 +106,9 @@ export function DMPanel({
       </Box>
 
       {/* Conversation list */}
-      <Box height={listHeight} flexDirection="column" borderStyle="single" borderColor={!inputFocused && selectedMessageIndex < 0 ? theme.border.focused : theme.border.normal}>
+      <Box height={listHeight} flexDirection="column" paddingX={1}>
         {conversations.length === 0 ? (
-          <Box paddingX={1}>
-            <Text color={theme.fg.muted}>No DM conversations yet. Press 'd' on a node to start one.</Text>
-          </Box>
+          <Text color={theme.fg.muted}>No DM conversations yet. Press 'd' on a node to start one.</Text>
         ) : (
           visibleConvos.map((convo, i) => {
             const actualIndex = convoScrollOffset + i;
@@ -123,39 +126,40 @@ export function DMPanel({
         )}
       </Box>
 
-      {/* Message view */}
-      <Box flexGrow={1} flexDirection="column" borderStyle="single" borderColor={selectedMessageIndex >= 0 && !inputFocused ? theme.border.focused : theme.border.normal} overflowY="hidden">
+      {/* Separator */}
+      <Box height={1} borderStyle="single" borderColor={theme.border.normal} borderTop={true} borderBottom={false} borderLeft={false} borderRight={false} />
+
+      {/* Message header */}
+      <Box paddingX={1}>
         {selectedConvo ? (
           <>
-            <Box paddingX={1} borderBottom borderColor={theme.border.normal}>
-              <Text color={theme.fg.muted}>DM with </Text>
-              <Text color={theme.fg.accent}>{nodeStore.getNodeName(selectedConvo.nodeNum)}</Text>
-              <Text color={theme.fg.muted}> ({formatNodeId(selectedConvo.nodeNum)})</Text>
-            </Box>
-            <Box flexDirection="column" flexGrow={1} flexShrink={1} paddingX={1} overflowY="hidden">
-              {messages.length === 0 ? (
-                <Text color={theme.fg.muted}>No messages yet. Start the conversation!</Text>
-              ) : (
-                visibleMessages.map((msg, i) => {
-                  const actualIndex = msgScrollOffset + i;
-                  return (
-                    <MessageRow
-                      key={msg.id ?? `${msg.packetId}-${i}`}
-                      message={msg}
-                      nodeStore={nodeStore}
-                      isOwn={msg.fromNode === myNodeNum}
-                      isSelected={actualIndex === selectedMessageIndex && !inputFocused}
-                      width={width}
-                    />
-                  );
-                })
-              )}
-            </Box>
+            <Text color={theme.fg.muted}>DM with </Text>
+            <Text color={theme.fg.accent}>{nodeStore.getNodeName(selectedConvo.nodeNum)}</Text>
+            <Text color={theme.fg.muted}> ({formatNodeId(selectedConvo.nodeNum)})</Text>
           </>
         ) : (
-          <Box paddingX={1} paddingY={1}>
-            <Text color={theme.fg.muted}>Select a conversation or press 'd' on a node to start a DM</Text>
-          </Box>
+          <Text color={theme.fg.muted}>Select a conversation</Text>
+        )}
+      </Box>
+
+      {/* Messages */}
+      <Box flexGrow={1} flexDirection="column" paddingX={1} overflowY="hidden">
+        {messages.length === 0 ? (
+          <Text color={theme.fg.muted}>{selectedConvo ? "No messages yet. Start the conversation!" : "Press 'd' on a node to start a DM"}</Text>
+        ) : (
+          visibleMessages.map((msg, i) => {
+            const actualIndex = msgScrollOffset + i;
+            return (
+              <MessageRow
+                key={msg.id ?? `${msg.packetId}-${i}`}
+                message={msg}
+                nodeStore={nodeStore}
+                isOwn={msg.fromNode === myNodeNum}
+                isSelected={actualIndex === selectedMessageIndex && !inputFocused}
+                textWidth={textWidth}
+              />
+            );
+          })
         )}
       </Box>
 
@@ -185,21 +189,21 @@ interface ConversationRowProps {
 function ConversationRow({ conversation, nodeStore, isSelected, isActive }: ConversationRowProps) {
   const name = nodeStore.getNodeName(conversation.nodeNum);
   const nodeId = formatNodeId(conversation.nodeNum);
-  const preview = conversation.lastMessage.length > 30
-    ? conversation.lastMessage.slice(0, 30) + "..."
+  const preview = conversation.lastMessage.length > 25
+    ? conversation.lastMessage.slice(0, 25) + "..."
     : conversation.lastMessage;
   const time = formatRelativeTime(conversation.lastTimestamp);
 
   return (
-    <Box backgroundColor={isSelected ? theme.bg.selected : undefined} paddingX={1}>
+    <Box backgroundColor={isSelected ? theme.bg.selected : undefined}>
       <Text wrap="truncate">
-        <Text color={isActive ? theme.fg.accent : theme.fg.primary}>{name.padEnd(12)}</Text>
+        <Text color={isActive ? theme.fg.accent : theme.fg.primary}>{name.padEnd(10)}</Text>
         <Text color={theme.fg.muted}>{nodeId.padEnd(12)}</Text>
         {conversation.unreadCount > 0 && (
-          <Text color={theme.status.online} bold>{`${conversation.unreadCount} new `.padEnd(8)}</Text>
+          <Text color={theme.status.online} bold>{`${conversation.unreadCount} new `.padEnd(7)}</Text>
         )}
         {conversation.unreadCount === 0 && (
-          <Text color={theme.fg.muted}>{"        "}</Text>
+          <Text color={theme.fg.muted}>{"       "}</Text>
         )}
         <Text color={theme.fg.secondary}>"{preview}"</Text>
         <Text color={theme.fg.muted}> {time}</Text>
@@ -223,10 +227,10 @@ interface MessageRowProps {
   nodeStore: NodeStore;
   isOwn: boolean;
   isSelected: boolean;
-  width: number;
+  textWidth: number;
 }
 
-function MessageRow({ message, nodeStore, isOwn, isSelected, width }: MessageRowProps) {
+function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth }: MessageRowProps) {
   const fromName = nodeStore.getNodeName(message.fromNode);
   const time = new Date(message.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
   const nameColor = isOwn ? theme.fg.accent : theme.packet.position;
@@ -275,47 +279,21 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width }: MessageRow
     }
   };
 
-  const textWidth = Math.max(20, width - PREFIX_WIDTH - 4 - 6);
-
-  const wrapText = (text: string, maxWidth: number): string[] => {
-    const result: string[] = [];
-    for (const line of text.split("\n")) {
-      if (line.length <= maxWidth) {
-        result.push(line);
-      } else {
-        let remaining = line;
-        while (remaining.length > maxWidth) {
-          let breakPoint = remaining.lastIndexOf(" ", maxWidth);
-          if (breakPoint <= 0) breakPoint = maxWidth;
-          result.push(remaining.slice(0, breakPoint));
-          remaining = remaining.slice(breakPoint).trimStart();
-        }
-        if (remaining) result.push(remaining);
-      }
-    }
-    return result;
-  };
-
-  const lines = wrapText(message.text, textWidth);
-  const continuationPadding = " ".repeat(PREFIX_WIDTH);
+  // Simple single-line display with truncation
+  const maxLen = textWidth;
+  const displayText = message.text.length > maxLen
+    ? message.text.slice(0, maxLen - 3) + "..."
+    : message.text;
 
   return (
-    <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
-      {lines.map((line, lineIndex) => (
-        <Box key={lineIndex}>
-          {lineIndex === 0 ? (
-            <Text>
-              <Text color={theme.fg.muted}>[{time}] </Text>
-              <Text color={nameColor}>{fromName.padEnd(10)}</Text>
-              <Text> </Text>
-            </Text>
-          ) : (
-            <Text>{continuationPadding}</Text>
-          )}
-          <Text color={theme.fg.primary}>{line}</Text>
-          {lineIndex === lines.length - 1 && getStatusIndicator()}
-        </Box>
-      ))}
+    <Box backgroundColor={isSelected ? theme.bg.selected : undefined}>
+      <Text wrap="truncate">
+        <Text color={theme.fg.muted}>[{time}] </Text>
+        <Text color={nameColor}>{fromName.padEnd(10)}</Text>
+        <Text> </Text>
+        <Text color={theme.fg.primary}>{displayText}</Text>
+        {getStatusIndicator()}
+      </Text>
     </Box>
   );
 }
