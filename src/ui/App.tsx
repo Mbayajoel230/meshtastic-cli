@@ -619,7 +619,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
       if (input === "d" && nodes[selectedNodeIndex]) {
         sendTraceroute(nodes[selectedNodeIndex].num, 0);
       }
-      if (input === "g" && nodes[selectedNodeIndex]?.hwModel) {
+      if (input === "l" && nodes[selectedNodeIndex]?.hwModel) {
         const hwName = Mesh.HardwareModel[nodes[selectedNodeIndex].hwModel!];
         if (hwName) {
           const query = encodeURIComponent(`Meshtastic ${hwName}`);
