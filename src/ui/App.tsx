@@ -113,7 +113,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
 
   // Load initial data
   useEffect(() => {
-    const initialPackets = packetStore.getAll().slice(-50);
+    const initialPackets = packetStore.getAll();
     setPackets(initialPackets);
     if (initialPackets.length > 0) {
       setSelectedPacketIndex(initialPackets.length - 1);

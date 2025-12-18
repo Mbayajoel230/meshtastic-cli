@@ -379,7 +379,7 @@ export function getPackets(limit = 1000): DbPacket[] {
     rxTime: row.rx_time,
     rxSnr: row.rx_snr,
     rxRssi: row.rx_rssi,
-    raw: row.raw as Uint8Array,
+    raw: new Uint8Array(row.raw),
   }));
 }
 
