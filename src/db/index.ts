@@ -567,3 +567,12 @@ export function markDMsAsRead(myNodeNum: number, otherNodeNum: number) {
   // Mark received DMs from otherNodeNum as read (could add a 'read' status later)
   // For now, we don't track read status separately from received
 }
+
+export function deleteDMConversation(myNodeNum: number, otherNodeNum: number) {
+  // Delete all DM messages between myNodeNum and otherNodeNum
+  db.run(`
+    DELETE FROM messages
+    WHERE to_node != ?
+      AND ((from_node = ? AND to_node = ?) OR (from_node = ? AND to_node = ?))
+  `, [BROADCAST_ADDR, myNodeNum, otherNodeNum, otherNodeNum, myNodeNum]);
+}

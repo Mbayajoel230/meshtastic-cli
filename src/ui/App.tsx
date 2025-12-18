@@ -184,6 +184,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
   const [selectedDMMessageIndex, setSelectedDMMessageIndex] = useState(-1);
   const [dmInputFocused, setDmInputFocused] = useState(false);
   const [dmInput, setDmInput] = useState("");
+  const [dmDeleteConfirm, setDmDeleteConfirm] = useState(false);
 
   // Config state
   const [configSection, setConfigSection] = useState<ConfigSection>("menu");
@@ -1726,13 +1727,31 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         setSelectedDMConvoIndex(dmConversations.length - 1);
         return;
       }
-      // Enter to focus messages or input
-      if (key.return && selectedConvo) {
-        if (dmMessages.length > 0) {
-          setSelectedDMMessageIndex(dmMessages.length - 1);
-        } else {
-          setDmInputFocused(true);
+      // Delete confirmation mode
+      if (dmDeleteConfirm && selectedConvo) {
+        if (input === "y" || input === "Y") {
+          db.deleteDMConversation(myNodeNum, selectedConvo.nodeNum);
+          setDmConversations(db.getDMConversations(myNodeNum));
+          setDmMessages([]);
+          setSelectedDMConvoIndex(0);
+          setDmDeleteConfirm(false);
+          showNotification("Conversation deleted");
+          return;
         }
+        if (input === "n" || input === "N" || key.escape) {
+          setDmDeleteConfirm(false);
+          return;
+        }
+        return; // Ignore other keys during confirmation
+      }
+      // '#' to delete conversation
+      if (input === "#" && selectedConvo) {
+        setDmDeleteConfirm(true);
+        return;
+      }
+      // Enter to focus input directly
+      if (key.return && selectedConvo) {
+        setDmInputFocused(true);
         return;
       }
       // 'n' to go to selected conversation's node
@@ -2102,6 +2121,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
                 myNodeNum={myNodeNum}
                 height={contentHeight - 2}
                 width={terminalWidth}
+                deleteConfirm={dmDeleteConfirm}
               />
             </Box>
           );

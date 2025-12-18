@@ -75,7 +75,8 @@ const dmKeys = [
   { key: "n", desc: "Go to node" },
   { key: "u", desc: "Update node from MeshView" },
   { key: "R", desc: "Resend failed message" },
-  { key: "Enter", desc: "Select / Focus input" },
+  { key: "#", desc: "Delete conversation" },
+  { key: "Enter", desc: "Focus input" },
   { key: "Escape", desc: "Back / Unfocus" },
 ];
 
