@@ -23,6 +23,8 @@ import { toBinary, create } from "@bufbuild/protobuf";
 import { formatNodeId } from "../utils/hex";
 import { exec } from "child_process";
 
+const BROADCAST_ADDR = 0xFFFFFFFF;
+
 type AppMode = "packets" | "nodes" | "chat" | "dm" | "config" | "log";
 
 export interface ChannelInfo {
@@ -164,6 +166,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
   const [paxcounterConfig, setPaxcounterConfig] = useState<ModuleConfig.ModuleConfig_PaxcounterConfig>();
   const [configChannels, setConfigChannels] = useState<Mesh.Channel[]>([]);
   const [configOwner, setConfigOwner] = useState<Mesh.User>();
+
+  // Filter state
+  const [nodesFilter, setNodesFilter] = useState("");
+  const [nodesFilterInput, setNodesFilterInput] = useState(false);
+  const [chatFilter, setChatFilter] = useState("");
+  const [chatFilterInput, setChatFilterInput] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -308,7 +316,19 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           status: "received",
         };
         db.insertMessage(msg);
-        setMessages((prev) => [...prev, msg].slice(-100));
+
+        // Only add broadcast messages to chat, not DMs
+        if (mp.to === BROADCAST_ADDR) {
+          setMessages((prev) => [...prev, msg].slice(-100));
+        } else {
+          // DM received - refresh conversations list
+          setDmConversations(db.getDMConversations(myNodeNum));
+          // If viewing this conversation, refresh messages
+          const selectedConvo = dmConversations[selectedDMConvoIndex];
+          if (selectedConvo && mp.from === selectedConvo.nodeNum) {
+            setDmMessages(db.getDMMessages(myNodeNum, selectedConvo.nodeNum));
+          }
+        }
       }
 
       // Handle routing ACK/NAK for our sent messages
@@ -952,16 +972,63 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         setMode("nodes");
       }
     } else if (mode === "nodes") {
+      // Compute filtered nodes for length checks
+      const filteredNodes = nodesFilter
+        ? nodes.filter(n =>
+            (n.shortName?.toLowerCase().includes(nodesFilter.toLowerCase())) ||
+            (n.longName?.toLowerCase().includes(nodesFilter.toLowerCase()))
+          )
+        : nodes;
+
+      // Filter input mode
+      if (nodesFilterInput) {
+        if (key.escape) {
+          setNodesFilterInput(false);
+          setNodesFilter("");
+          setSelectedNodeIndex(0);
+          return;
+        }
+        if (key.return) {
+          setNodesFilterInput(false);
+          setSelectedNodeIndex(0);
+          return;
+        }
+        if (key.backspace || key.delete) {
+          setNodesFilter(s => s.slice(0, -1));
+          setSelectedNodeIndex(0);
+          return;
+        }
+        if (input && !key.ctrl && !key.meta) {
+          setNodesFilter(s => s + input);
+          setSelectedNodeIndex(0);
+          return;
+        }
+        return;
+      }
+
+      // '/' to enter filter mode
+      if (input === "/") {
+        setNodesFilterInput(true);
+        return;
+      }
+
+      // Escape to clear filter when filter is active
+      if (key.escape && nodesFilter) {
+        setNodesFilter("");
+        setSelectedNodeIndex(0);
+        return;
+      }
+
       const nodePageSize = Math.max(1, terminalHeight - 16);
       if (input === "j" || key.downArrow) {
-        setSelectedNodeIndex((i) => Math.min(i + 1, nodes.length - 1));
+        setSelectedNodeIndex((i) => Math.min(i + 1, filteredNodes.length - 1));
       }
       if (input === "k" || key.upArrow) {
         setSelectedNodeIndex((i) => Math.max(i - 1, 0));
       }
       // Page up/down
       if ((key.ctrl && input === "d") || key.pageDown) {
-        setSelectedNodeIndex((i) => Math.min(i + nodePageSize, nodes.length - 1));
+        setSelectedNodeIndex((i) => Math.min(i + nodePageSize, filteredNodes.length - 1));
       }
       if ((key.ctrl && input === "u") || key.pageUp) {
         setSelectedNodeIndex((i) => Math.max(i - nodePageSize, 0));
@@ -973,35 +1040,36 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         setSelectedNodeIndex(0);
       }
       if (isNodeEnd) {
-        setSelectedNodeIndex(nodes.length - 1);
+        setSelectedNodeIndex(filteredNodes.length - 1);
       }
-      if (input === "t" && nodes[selectedNodeIndex]) {
-        sendTraceroute(nodes[selectedNodeIndex].num);
+      // Commands operate on filtered list
+      const selectedNode = filteredNodes[selectedNodeIndex];
+      if (input === "t" && selectedNode) {
+        sendTraceroute(selectedNode.num);
       }
-      if (input === "p" && nodes[selectedNodeIndex]) {
-        sendPositionRequest(nodes[selectedNodeIndex].num);
+      if (input === "p" && selectedNode) {
+        sendPositionRequest(selectedNode.num);
       }
-      if (input === "e" && nodes[selectedNodeIndex]) {
-        sendTelemetryRequest(nodes[selectedNodeIndex].num);
+      if (input === "e" && selectedNode) {
+        sendTelemetryRequest(selectedNode.num);
       }
-      if (input === "d" && nodes[selectedNodeIndex]) {
-        startDMWith(nodes[selectedNodeIndex].num);
+      if (input === "d" && selectedNode) {
+        startDMWith(selectedNode.num);
       }
-      if (input === "D" && nodes[selectedNodeIndex]) {
-        sendTraceroute(nodes[selectedNodeIndex].num, 0); // Direct ping
+      if (input === "D" && selectedNode) {
+        sendTraceroute(selectedNode.num, 0); // Direct ping
       }
-      if (input === "l" && nodes[selectedNodeIndex]?.hwModel) {
-        const hwName = Mesh.HardwareModel[nodes[selectedNodeIndex].hwModel!];
+      if (input === "l" && selectedNode?.hwModel) {
+        const hwName = Mesh.HardwareModel[selectedNode.hwModel!];
         if (hwName) {
           const query = encodeURIComponent(`Meshtastic ${hwName}`);
           exec(`open "https://www.google.com/search?q=${query}"`);
         }
       }
-      if (input === "m" && nodes[selectedNodeIndex]) {
-        const node = nodes[selectedNodeIndex];
-        if (node.latitudeI != null && node.longitudeI != null) {
-          const lat = node.latitudeI / 1e7;
-          const lon = node.longitudeI / 1e7;
+      if (input === "m" && selectedNode) {
+        if (selectedNode.latitudeI != null && selectedNode.longitudeI != null) {
+          const lat = selectedNode.latitudeI / 1e7;
+          const lon = selectedNode.longitudeI / 1e7;
           exec(`open "https://www.google.com/maps?q=${lat},${lon}"`);
         } else {
           showNotification("No position data for this node");
@@ -1408,15 +1476,25 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           );
         })()}
 
-        {mode === "nodes" && (
-          <Box flexGrow={1} borderStyle="single" borderColor={theme.border.normal}>
-            <NodesPanel
-              nodes={nodes}
-              selectedIndex={selectedNodeIndex}
-              height={terminalHeight - 6}
-            />
-          </Box>
-        )}
+        {mode === "nodes" && (() => {
+          const filteredNodes = nodesFilter
+            ? nodes.filter(n =>
+                (n.shortName?.toLowerCase().includes(nodesFilter.toLowerCase())) ||
+                (n.longName?.toLowerCase().includes(nodesFilter.toLowerCase()))
+              )
+            : nodes;
+          return (
+            <Box flexGrow={1} borderStyle="single" borderColor={theme.border.normal}>
+              <NodesPanel
+                nodes={filteredNodes}
+                selectedIndex={selectedNodeIndex}
+                height={terminalHeight - 6}
+                filter={nodesFilter}
+                filterInputActive={nodesFilterInput}
+              />
+            </Box>
+          );
+        })()}
 
         {mode === "chat" && (
           <Box flexGrow={1} flexDirection="column">

@@ -42,21 +42,43 @@ interface NodesPanelProps {
   selectedIndex: number;
   height?: number;
   inspectorHeight?: number;
+  filter?: string;
+  filterInputActive?: boolean;
 }
 
-export function NodesPanel({ nodes, selectedIndex, height = 20, inspectorHeight = 10 }: NodesPanelProps) {
+export function NodesPanel({ nodes, selectedIndex, height = 20, inspectorHeight = 10, filter, filterInputActive }: NodesPanelProps) {
+  const hasFilter = filter && filter.length > 0;
+  const filterRowHeight = (hasFilter || filterInputActive) ? 1 : 0;
+
   if (nodes.length === 0) {
     return (
-      <Box flexDirection="column" paddingX={1}>
-        <Text color={theme.fg.muted}>No nodes discovered yet</Text>
-        <Text> </Text>
-        <Text color={theme.fg.secondary}>Nodes will appear as they are discovered.</Text>
-        <Text color={theme.fg.secondary}>Try requesting config from your device.</Text>
+      <Box flexDirection="column" paddingX={1} height={height}>
+        {filterInputActive && (
+          <Box>
+            <Text color={theme.fg.accent}>/</Text>
+            <Text color={theme.fg.primary}>{filter}</Text>
+            <Text color={theme.fg.accent}>█</Text>
+          </Box>
+        )}
+        {hasFilter && !filterInputActive && (
+          <Box>
+            <Text color={theme.packet.encrypted} bold>[FILTERED: "{filter}"]</Text>
+            <Text color={theme.fg.muted}> No matches</Text>
+          </Box>
+        )}
+        {!hasFilter && !filterInputActive && (
+          <>
+            <Text color={theme.fg.muted}>No nodes discovered yet</Text>
+            <Text> </Text>
+            <Text color={theme.fg.secondary}>Nodes will appear as they are discovered.</Text>
+            <Text color={theme.fg.secondary}>Try requesting config from your device.</Text>
+          </>
+        )}
       </Box>
     );
   }
 
-  const listHeight = height - inspectorHeight - 1;
+  const listHeight = height - inspectorHeight - 1 - filterRowHeight;
   const selectedNode = nodes[selectedIndex];
 
   // Calculate visible window that keeps selection in view
@@ -76,6 +98,22 @@ export function NodesPanel({ nodes, selectedIndex, height = 20, inspectorHeight 
 
   return (
     <Box flexDirection="column" width="100%">
+      {/* Filter row */}
+      {filterInputActive && (
+        <Box paddingX={1}>
+          <Text color={theme.fg.accent}>/</Text>
+          <Text color={theme.fg.primary}>{filter}</Text>
+          <Text color={theme.fg.accent}>█</Text>
+        </Box>
+      )}
+      {hasFilter && !filterInputActive && (
+        <Box paddingX={1}>
+          <Text color={theme.packet.encrypted} bold>[FILTERED: "{filter}"]</Text>
+          <Text color={theme.fg.muted}> ({nodes.length} match{nodes.length !== 1 ? "es" : ""}) </Text>
+          <Text color={theme.fg.secondary}>Esc to clear</Text>
+        </Box>
+      )}
+
       {/* Node list */}
       <Box height={listHeight} flexDirection="column">
         {/* Header */}
