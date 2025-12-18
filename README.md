@@ -27,17 +27,17 @@
 > [!WARNING]
 > This project was completely vibe-coded with [Claude Code](https://claude.com/claude-code). Use at your own risk.
 
-A terminal UI for monitoring Meshtastic mesh networks. Connects to a Meshtastic node via HTTP and displays real-time packet traffic, node information, and chat messages.
-
-This is a read-only viewer. It does not support device configuration.
+A terminal UI for monitoring and configuring Meshtastic mesh networks. Connects to a Meshtastic node via HTTP and displays real-time packet traffic, node information, chat messages, and device configuration.
 
 ## Features
 
 - **Packets view** - Live packet stream with detailed inspection (decoded payload, JSON, hex dump)
 - **Nodes view** - Discovered nodes with signal quality, battery, position, and hardware info
 - **Chat view** - Send and receive text messages on any channel
+- **DM view** - Direct messages to individual nodes with delivery confirmation
+- **Config view** - View device configuration (radio, modules, channels, user)
 - **Log view** - Position and traceroute response history
-- **Node commands** - Traceroute, position request, telemetry request, direct ping
+- **Node commands** - Traceroute, position request, telemetry request, direct ping, start DM
 - **Persistent storage** - SQLite database for nodes, messages, and packets
 - **Session support** - Multiple named sessions for different radios
 
@@ -93,7 +93,9 @@ Options:
 | 1 | Packets view |
 | 2 | Nodes view |
 | 3 | Chat view |
-| 4 | Log view |
+| 4 | DM view |
+| 5 | Config view |
+| 6 | Log view |
 | q | Quit |
 | ? | Toggle help |
 
@@ -117,16 +119,37 @@ Options:
 | t | Traceroute |
 | p | Request position |
 | e | Request telemetry |
-| d | Direct ping |
-| g | Google hardware model |
+| d | Start DM |
+| D | Direct ping |
+| l | Lookup hardware model |
 
 ### Chat View
 
 | Key | Action |
 |-----|--------|
+| j/k | Navigate messages |
 | Tab | Switch channel |
+| d | DM the sender |
 | Enter | Send message |
 | Escape | Exit chat |
+
+### DM View
+
+| Key | Action |
+|-----|--------|
+| j/k | Navigate conversations/messages |
+| n | Go to node |
+| Enter | Select / Send message |
+| Escape | Back / Unfocus |
+
+### Config View
+
+| Key | Action |
+|-----|--------|
+| j/k | Navigate options |
+| Enter | Select section / Refresh |
+| Escape | Back to menu |
+| r | Reboot device |
 
 ## License
 
