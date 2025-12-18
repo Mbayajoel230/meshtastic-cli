@@ -6,10 +6,9 @@ A cypherpunk-style terminal interface for viewing and inspecting Meshtastic mesh
 ## Tech Stack
 - **Runtime**: Bun
 - **Language**: TypeScript
-- **TUI**: @opentui/core (local: `@opentui/core`)
+- **TUI**: Ink (React for CLIs)
 - **Protobufs**: @bufbuild/protobuf + protobuf-es
 - **Serial**: serialport npm package
-- **Location**: ``
 
 ## Project Structure
 ```
@@ -176,7 +175,7 @@ const theme = {
 ### Phase 1: Project Setup
 - Initialize package.json with dependencies
 - Configure tsconfig.json for Bun
-- Generate protobuf TypeScript from `meshtastic protobufs `
+- Use @meshtastic/protobufs for protocol buffers
 - Basic serial framing parser
 
 ### Phase 2: Transport Layer
@@ -208,13 +207,6 @@ const theme = {
 - Node database updates
 - Error handling and reconnection
 - ASCII art header
-
-## Key Reference Files
-- `meshtastic protobufs mesh.proto` - Core types
-- `meshtastic protobufs portnums.proto` - PortNum enum
-- `meshtastic web transport` - Serial reference
-- `@opentui/core/src/examples/scroll-example.ts` - ScrollBox patterns
-- `@opentui/core/src/renderables/Input.ts` - Input component
 
 ## Serial Protocol
 ```
