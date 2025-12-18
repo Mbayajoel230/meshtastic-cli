@@ -724,6 +724,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       db.insertMessage(msg);
       setMessages((prev) => [...prev, msg].slice(-100));
       setDmInput("");
+
+      // Refresh DM conversations and keep selection on same conversation
+      const newConvos = db.getDMConversations(myNodeNum);
+      const newIndex = newConvos.findIndex(c => c.nodeNum === toNode);
+      setDmConversations(newConvos);
+      if (newIndex >= 0) setSelectedDMConvoIndex(newIndex);
+      setDmMessages(db.getDMMessages(myNodeNum, toNode));
     } catch {
       showNotification("Failed to send DM");
     }
