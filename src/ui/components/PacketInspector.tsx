@@ -571,6 +571,42 @@ function renderFromRadioDetails(fr: Mesh.FromRadio): React.ReactNode[] | null {
       break;
     }
 
+    case "clientNotification": {
+      const notif = variant.value as { level?: number; message?: string; time?: number };
+      const levelNames: Record<number, string> = { 10: "DEBUG", 20: "INFO", 30: "WARNING", 40: "ERROR", 50: "CRITICAL" };
+      const levelName = notif.level ? levelNames[notif.level] || `LEVEL_${notif.level}` : "UNKNOWN";
+      const levelColor = notif.level && notif.level >= 40 ? theme.packet.encrypted
+        : notif.level && notif.level >= 30 ? theme.data.coords
+        : theme.fg.primary;
+      lines.push(
+        <Box key="type">
+          <Text color={theme.fg.muted}>Type: </Text>
+          <Text color={levelColor}>CLIENT_NOTIFICATION</Text>
+        </Box>
+      );
+      lines.push(
+        <Box key="level">
+          <Text color={theme.fg.muted}>Level: </Text>
+          <Text color={levelColor}>{levelName}</Text>
+          {notif.time && (
+            <>
+              <Text color={theme.fg.muted}>  Time: </Text>
+              <Text color={theme.fg.secondary}>{new Date(notif.time * 1000).toLocaleTimeString()}</Text>
+            </>
+          )}
+        </Box>
+      );
+      if (notif.message) {
+        lines.push(
+          <Box key="msg">
+            <Text color={theme.fg.muted}>Message: </Text>
+            <Text color={theme.fg.primary}>{notif.message}</Text>
+          </Box>
+        );
+      }
+      break;
+    }
+
     default:
       if (variant.case) {
         lines.push(

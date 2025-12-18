@@ -428,6 +428,23 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     );
   }
 
+  if (variantCase === "clientNotification") {
+    const notif = fr.payloadVariant.value as { level?: number; message?: string };
+    const levelColor = notif.level && notif.level >= 40 ? theme.packet.encrypted
+      : notif.level && notif.level >= 30 ? theme.data.coords
+      : theme.fg.primary;
+    return (
+      <Box backgroundColor={bgColor}>
+        <Text wrap="truncate">
+          <Text color={theme.data.time}>[{time}] </Text>
+          <Text color={theme.data.arrow}>{"!"} </Text>
+          <Text color={levelColor}>{"NOTIFICATION".padEnd(14)}</Text>
+          <Text color={theme.fg.primary}>{notif.message || ""}</Text>
+        </Text>
+      </Box>
+    );
+  }
+
   if (variantCase) {
     return (
       <Box backgroundColor={bgColor}>
