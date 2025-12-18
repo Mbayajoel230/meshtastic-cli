@@ -52,6 +52,8 @@ chmod +x meshtastic-cli-darwin-arm64
 ./meshtastic-cli-darwin-arm64 192.168.1.100
 ```
 
+Note: macOS binaries are not codesigned. You may need to right-click and select "Open" or run `xattr -d com.apple.quarantine <binary>` to bypass Gatekeeper.
+
 ### Docker
 
 ```sh
