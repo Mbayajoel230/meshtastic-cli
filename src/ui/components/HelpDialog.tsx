@@ -54,6 +54,7 @@ export function HelpDialog({ mode }: HelpDialogProps) {
       flexDirection="column"
       borderStyle="double"
       borderColor={theme.fg.accent}
+      backgroundColor={theme.bg.primary}
       paddingX={2}
       paddingY={1}
     >
