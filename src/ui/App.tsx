@@ -1585,6 +1585,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           }
           return;
         }
+        // 'u' to update sender node from MeshView
+        if (input === "u" && filteredMessages[selectedChatMessageIndex]) {
+          const msg = filteredMessages[selectedChatMessageIndex];
+          fetchNodeFromMeshView(msg.fromNode);
+          return;
+        }
       }
     } else if (mode === "dm") {
       const selectedConvo = dmConversations[selectedDMConvoIndex];
@@ -1657,6 +1663,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           }
           return;
         }
+        // 'u' to update sender node from MeshView
+        if (input === "u" && dmMessages[selectedDMMessageIndex]) {
+          const msg = dmMessages[selectedDMMessageIndex];
+          fetchNodeFromMeshView(msg.fromNode);
+          return;
+        }
         return;
       }
 
@@ -1696,6 +1708,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           setMode("nodes");
           setSelectedNodeIndex(nodeIndex);
         }
+        return;
+      }
+      // 'u' to update selected conversation's node from MeshView
+      if (input === "u" && selectedConvo) {
+        fetchNodeFromMeshView(selectedConvo.nodeNum);
         return;
       }
     } else if (mode === "config") {

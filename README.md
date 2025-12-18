@@ -32,12 +32,14 @@ A terminal UI for monitoring and configuring Meshtastic mesh networks. Connects 
 ## Features
 
 - **Packets view** - Live packet stream with detailed inspection (decoded payload, JSON, hex dump)
-- **Nodes view** - Discovered nodes with signal quality, battery, position, and hardware info
-- **Chat view** - Send and receive text messages on any channel
-- **DM view** - Direct messages to individual nodes with delivery confirmation
-- **Config view** - View device configuration (radio, modules, channels, user)
+- **Nodes view** - Discovered nodes with signal quality, battery, position, hardware, favorites
+- **Chat view** - Send and receive channel messages with emoji support
+- **DM view** - Direct messages with delivery confirmation and resend support
+- **Config view** - View and edit device configuration with batch mode
 - **Log view** - Position and traceroute response history
-- **Node commands** - Traceroute, position request, telemetry request, direct ping, start DM
+- **Node commands** - Traceroute, position/telemetry request, direct ping, DM, MeshView lookup
+- **MeshView integration** - Update node info from a MeshView server
+- **Device notifications** - Auto-dismissing modal for device alerts
 - **Persistent storage** - SQLite database for nodes, messages, and packets
 - **Session support** - Multiple named sessions for different radios
 
@@ -90,12 +92,8 @@ Options:
 
 | Key | Action |
 |-----|--------|
-| 1 | Packets view |
-| 2 | Nodes view |
-| 3 | Chat view |
-| 4 | DM view |
-| 5 | Config view |
-| 6 | Log view |
+| 1-6 | Switch to view |
+| [ / ] | Previous / Next view |
 | q | Quit |
 | ? | Toggle help |
 
@@ -116,22 +114,33 @@ Options:
 | Key | Action |
 |-----|--------|
 | j/k | Navigate nodes |
+| / | Filter nodes |
 | t | Traceroute |
 | p | Request position |
 | e | Request telemetry |
 | d | Start DM |
-| D | Direct ping |
+| D | Direct ping (hop=0) |
+| u | Update from MeshView |
+| m | Open position in Maps |
 | l | Lookup hardware model |
+| f | Toggle favorite |
+| i | Toggle ignored |
+| x | Remove node from DB |
 
 ### Chat View
 
 | Key | Action |
 |-----|--------|
 | j/k | Navigate messages |
+| / | Filter messages |
 | Tab | Switch channel |
+| n | Go to sender node |
 | d | DM the sender |
-| Enter | Send message |
-| Escape | Exit chat |
+| u | Update node from MeshView |
+| R | Resend failed message |
+| Enter | Focus input |
+| Ctrl+E | Emoji selector |
+| Escape | Unfocus / Exit |
 
 ### DM View
 
@@ -139,15 +148,19 @@ Options:
 |-----|--------|
 | j/k | Navigate conversations/messages |
 | n | Go to node |
-| Enter | Select / Send message |
+| u | Update node from MeshView |
+| R | Resend failed message |
+| Enter | Select / Focus input |
 | Escape | Back / Unfocus |
 
 ### Config View
 
 | Key | Action |
 |-----|--------|
-| j/k | Navigate options |
-| Enter | Select section / Refresh |
+| h/j/k/l | Navigate menu |
+| Enter | Select section |
+| c | Commit changes |
+| C | Discard changes |
 | Escape | Back to menu |
 | r | Reboot device |
 
