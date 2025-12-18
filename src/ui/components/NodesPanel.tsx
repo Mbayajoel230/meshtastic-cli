@@ -193,8 +193,8 @@ function NodeRow({ node, isSelected }: NodeRowProps) {
       <Text color={theme.fg.muted}>{nodeId.padEnd(12)}</Text>
       <Text color="#ffcc00">{favStar}</Text><Text>{"    "}</Text>
       <Text color={getHopsColor(node.hopsAway)}>{hops.padEnd(6)}</Text>
-      <Text color={getSnrColor(node.snr)}>{snr.padEnd(8)}</Text>
-      <Text color={getBatteryColor(node.batteryLevel)}>{battery.padEnd(7)}</Text>
+      <Text color={getSnrColor(node.snr)}>{snr.padStart(7)} </Text>
+      <Text color={getBatteryColor(node.batteryLevel, node.voltage)}>{battery.padEnd(7)}</Text>
       <Text color={theme.fg.secondary}>{lastHeard.padEnd(10)}</Text>
       <Box flexGrow={1}><Text color={theme.fg.primary} wrap="truncate">{longName}</Text></Box>
       <Box width={16}><Text color={theme.data.hardware} wrap="truncate">{hwModel}</Text></Box>
@@ -368,9 +368,16 @@ function getSnrColor(snr?: number): string {
   return theme.packet.encrypted;
 }
 
-function getBatteryColor(level?: number): string {
-  if (level === undefined) return theme.fg.muted;
-  if (level >= 50) return theme.packet.direct;
-  if (level >= 20) return theme.packet.telemetry;
-  return theme.packet.encrypted;
+function getBatteryColor(level?: number, voltage?: number): string {
+  // Show muted for "-" (no battery info)
+  if ((level === undefined || level === 0) && (voltage === undefined || voltage === 0)) {
+    return theme.fg.muted;
+  }
+  if (level !== undefined && level > 0) {
+    if (level >= 50) return theme.packet.direct;
+    if (level >= 20) return theme.packet.telemetry;
+    return theme.packet.encrypted;
+  }
+  // Has voltage but no level - neutral color
+  return theme.fg.primary;
 }
