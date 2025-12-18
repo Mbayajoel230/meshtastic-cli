@@ -226,8 +226,8 @@ function ConfigMenu({
       <Box paddingX={1}>
         <Text color={theme.fg.accent} bold>CONFIG</Text>
         {loading && <Text color={theme.fg.muted}> (loading...)</Text>}
-        {batchEditMode && (
-          <Text color={theme.packet.encrypted}> [BATCH MODE: {batchEditCount || 0} pending]</Text>
+        {batchEditCount !== undefined && batchEditCount > 0 && (
+          <Text color={theme.packet.encrypted}> [{batchEditCount} unsaved change{batchEditCount !== 1 ? "s" : ""}]</Text>
         )}
       </Box>
 
@@ -298,10 +298,10 @@ function ConfigMenu({
       </Box>
 
       <Box paddingX={1}>
-        {batchEditMode ? (
-          <Text color={theme.fg.muted}>j/k navigate • Enter select • c commit • C cancel • r reboot</Text>
+        {batchEditCount !== undefined && batchEditCount > 0 ? (
+          <Text color={theme.fg.muted}>h/j/k/l navigate • Enter select • c commit • C discard • r reboot</Text>
         ) : (
-          <Text color={theme.fg.muted}>j/k navigate • Enter select • b batch mode • r reboot</Text>
+          <Text color={theme.fg.muted}>h/j/k/l navigate • Enter select • r reboot</Text>
         )}
       </Box>
     </Box>

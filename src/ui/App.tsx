@@ -1073,11 +1073,10 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       await transport.send(binary);
       setBatchEditMode(true);
       setBatchEditCount(0);
-      showNotification("Batch edit mode started. Changes will be queued.");
     } catch {
-      showNotification("Failed to start batch edit mode");
+      // Silently fail - batch mode is best-effort
     }
-  }, [myNodeNum, transport, showNotification]);
+  }, [myNodeNum, transport]);
 
   const commitBatchEdit = useCallback(async () => {
     if (!transport || !myNodeNum) return;
@@ -1153,7 +1152,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       if (input === "2") { setMode("nodes"); setChatInputFocused(false); setDmInputFocused(false); return; }
       if (input === "3") { setMode("chat"); return; }
       if (input === "4") { setMode("dm"); return; }
-      if (input === "5") { setMode("config"); setChatInputFocused(false); setDmInputFocused(false); return; }
+      if (input === "5") { setMode("config"); setChatInputFocused(false); setDmInputFocused(false); if (!batchEditMode) startBatchEdit(); return; }
       if (input === "6") { setMode("log"); setChatInputFocused(false); setDmInputFocused(false); return; }
       // Bracket keys for tab switching
       const modes: AppMode[] = ["packets", "nodes", "chat", "dm", "config", "log"];
@@ -1163,6 +1162,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         setMode(newMode);
         setChatInputFocused(false);
         setDmInputFocused(false);
+        if (newMode === "config" && !batchEditMode) startBatchEdit();
         return;
       }
       if (input === "]") {
@@ -1171,6 +1171,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         setMode(newMode);
         setChatInputFocused(false);
         setDmInputFocused(false);
+        if (newMode === "config" && !batchEditMode) startBatchEdit();
         return;
       }
     }
@@ -1702,6 +1703,39 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         }
         if (input === "k" || key.upArrow) {
           setConfigMenuIndex((i) => Math.max(i - 1, 0));
+          return;
+        }
+        // Column navigation with h/l or left/right arrows
+        // Columns: radio (0-7), module (8-20), other (21-22), local (23)
+        const columnStarts = [0, 8, 21, 23];
+        const columnEnds = [7, 20, 22, 23];
+        const getColumn = (idx: number) => {
+          for (let c = 0; c < columnStarts.length; c++) {
+            if (idx >= columnStarts[c] && idx <= columnEnds[c]) return c;
+          }
+          return 0;
+        };
+        const getRowInColumn = (idx: number, col: number) => idx - columnStarts[col];
+        if (input === "h" || key.leftArrow) {
+          const col = getColumn(configMenuIndex);
+          if (col > 0) {
+            const row = getRowInColumn(configMenuIndex, col);
+            const newCol = col - 1;
+            const maxRow = columnEnds[newCol] - columnStarts[newCol];
+            const newRow = Math.min(row, maxRow);
+            setConfigMenuIndex(columnStarts[newCol] + newRow);
+          }
+          return;
+        }
+        if (input === "l" || key.rightArrow) {
+          const col = getColumn(configMenuIndex);
+          if (col < columnStarts.length - 1) {
+            const row = getRowInColumn(configMenuIndex, col);
+            const newCol = col + 1;
+            const maxRow = columnEnds[newCol] - columnStarts[newCol];
+            const newRow = Math.min(row, maxRow);
+            setConfigMenuIndex(columnStarts[newCol] + newRow);
+          }
           return;
         }
         // Home/End
