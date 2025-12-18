@@ -54,6 +54,11 @@ export function PacketList({ packets, selectedIndex, nodeStore, height = 20, isF
 
   return (
     <Box flexDirection="column" width="100%">
+      {isFollowing && (
+        <Box justifyContent="center">
+          <LiveIndicator />
+        </Box>
+      )}
       {visiblePackets.map((packet, i) => {
         const actualIndex = startIndex + i;
         const isSelected = actualIndex === selectedIndex;
@@ -66,11 +71,6 @@ export function PacketList({ packets, selectedIndex, nodeStore, height = 20, isF
           />
         );
       })}
-      {isFollowing && (
-        <Box justifyContent="center">
-          <LiveIndicator />
-        </Box>
-      )}
     </Box>
   );
 }
