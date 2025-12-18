@@ -1,10 +1,32 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Text } from "ink";
 import { theme } from "../theme";
 import type { DecodedPacket } from "../../protocol/decoder";
 import type { NodeStore } from "../../protocol/node-store";
 import { Mesh, Portnums, Telemetry, StoreForward } from "@meshtastic/protobufs";
 import { formatNodeId } from "../../utils/hex";
+
+function LiveIndicator() {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((f) => (f + 1) % 4);
+    }, 300);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Pulsing dot animation
+  const dots = ["●", "●", "○", "○"];
+  const colors = [theme.status.online, "#00cc7a", "#009959", "#00cc7a"];
+
+  return (
+    <Text>
+      <Text color={colors[frame]}>{dots[frame]}</Text>
+      <Text color={theme.status.online} bold> LIVE</Text>
+    </Text>
+  );
+}
 
 interface PacketListProps {
   packets: DecodedPacket[];
@@ -15,7 +37,8 @@ interface PacketListProps {
 }
 
 export function PacketList({ packets, selectedIndex, nodeStore, height = 20, isFollowing }: PacketListProps) {
-  const visibleCount = Math.max(1, height - 2);
+  // Account for LIVE indicator taking one row when showing
+  const visibleCount = Math.max(1, height - 2 - (isFollowing ? 1 : 0));
 
   let startIndex = 0;
   if (packets.length > visibleCount) {
@@ -31,8 +54,8 @@ export function PacketList({ packets, selectedIndex, nodeStore, height = 20, isF
   return (
     <Box flexDirection="column" width="100%">
       {isFollowing && (
-        <Box position="absolute" marginLeft={1}>
-          <Text color={theme.status.online} bold>LIVE</Text>
+        <Box paddingLeft={1}>
+          <LiveIndicator />
         </Box>
       )}
       {visiblePackets.map((packet, i) => {
