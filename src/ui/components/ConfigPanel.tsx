@@ -727,21 +727,24 @@ interface ChannelsConfigViewProps {
 }
 
 function ChannelsConfigView({ channels, selectedIndex = 0, editingField, editValue }: ChannelsConfigViewProps) {
-  if (!channels || channels.length === 0) return <NoConfigLoaded />;
+  // Filter out undefined entries (sparse array) and sort by index
+  const validChannels = (channels || []).filter((ch): ch is Mesh.Channel => ch != null).sort((a, b) => a.index - b.index);
 
-  const selectedChannel = channels[selectedIndex];
+  if (validChannels.length === 0) return <NoConfigLoaded />;
+
+  const selectedChannel = validChannels[selectedIndex];
   const roleNames = ["DISABLED", "PRIMARY", "SECONDARY"];
 
   return (
     <Box flexDirection="column">
       {/* Channel list */}
-      {channels.map((ch, i) => {
+      {validChannels.map((ch, i) => {
         const isSelected = i === selectedIndex;
         const roleName = Channel.Channel_Role[ch.role] || "UNKNOWN";
         const name = ch.settings?.name || (ch.index === 0 ? "Primary" : `Channel ${ch.index}`);
         return (
-          <Box key={i} backgroundColor={isSelected ? theme.bg.selected : undefined}>
-            <Text color={isSelected ? theme.fg.accent : theme.fg.muted}>{isSelected ? "▶ " : "  "}</Text>
+          <Box key={ch.index} backgroundColor={isSelected ? theme.bg.selected : undefined}>
+            <Text color={isSelected ? theme.fg.accent : theme.fg.muted}>{isSelected ? "► " : "  "}</Text>
             <Text color={theme.fg.accent} bold>{`${ch.index}`.padEnd(3)}</Text>
             <Text color={theme.fg.primary}>{name.padEnd(16)}</Text>
             <Text color={theme.fg.muted}>{roleName}</Text>

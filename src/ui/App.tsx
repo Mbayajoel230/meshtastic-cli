@@ -1935,10 +1935,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           return;
         }
         // Channel navigation and editing
-        if (configSection === "channels" && configChannels.length > 0) {
+        const validChannels = configChannels.filter(ch => ch != null).sort((a, b) => a.index - b.index);
+        if (configSection === "channels" && validChannels.length > 0) {
           // j/k to navigate channels
           if (input === "j" || key.downArrow) {
-            setSelectedChannelIndex(i => Math.min(i + 1, configChannels.length - 1));
+            setSelectedChannelIndex(i => Math.min(i + 1, validChannels.length - 1));
             return;
           }
           if (input === "k" || key.upArrow) {
@@ -1947,7 +1948,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           }
           // 'e' to edit channel name
           if (input === "e") {
-            const channel = configChannels[selectedChannelIndex];
+            const channel = validChannels[selectedChannelIndex];
             if (channel) {
               setConfigEditing(`channel${channel.index}_name`);
               setConfigEditValue(channel.settings?.name || "");
@@ -1956,7 +1957,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           }
           // 'r' to cycle channel role
           if (input === "r") {
-            const channel = configChannels[selectedChannelIndex];
+            const channel = validChannels[selectedChannelIndex];
             if (channel) {
               // Cycle: DISABLED(0) -> PRIMARY(1) -> SECONDARY(2) -> DISABLED(0)
               const nextRole = (channel.role + 1) % 3;

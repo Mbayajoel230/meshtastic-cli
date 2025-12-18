@@ -270,9 +270,11 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth }: Messag
   };
 
   const maxLen = Math.max(10, textWidth);
-  const displayText = message.text.length > maxLen
-    ? message.text.slice(0, maxLen - 3) + "..."
-    : message.text;
+  // Remove carriage returns and other control characters that break terminal display
+  const cleanText = message.text.replace(/[\r\x00-\x1f]/g, "");
+  const displayText = cleanText.length > maxLen
+    ? cleanText.slice(0, maxLen - 3) + "..."
+    : cleanText;
 
   return (
     <Box backgroundColor={isSelected ? theme.bg.selected : undefined}>

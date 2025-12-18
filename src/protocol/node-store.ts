@@ -152,6 +152,9 @@ export class NodeStore {
       latitudeI: data.lastLat ?? existing.latitudeI,
       longitudeI: data.lastLong ?? existing.longitudeI,
       lastHeard: data.lastSeen ? Math.floor(data.lastSeen / 1000000) : existing.lastHeard,
+      // Explicitly preserve radio metrics - MeshView doesn't have these
+      snr: existing.snr,
+      hopsAway: existing.hopsAway,
     };
     this.nodes.set(nodeNum, updated);
     this.saveNode(updated);

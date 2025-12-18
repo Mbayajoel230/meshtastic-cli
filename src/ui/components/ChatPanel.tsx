@@ -346,7 +346,9 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width }: MessageRow
     return result;
   };
 
-  const lines = wrapText(message.text, textWidth);
+  // Remove carriage returns and other control characters that break terminal display
+  const cleanText = message.text.replace(/[\r\x00-\x1f]/g, "");
+  const lines = wrapText(cleanText, textWidth);
   const continuationPadding = " ".repeat(PREFIX_WIDTH);
 
   return (
