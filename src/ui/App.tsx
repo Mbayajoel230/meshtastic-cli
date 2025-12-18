@@ -23,6 +23,7 @@ import * as db from "../db";
 import { toBinary, create } from "@bufbuild/protobuf";
 import { formatNodeId } from "../utils/hex";
 import { exec } from "child_process";
+import { setSetting } from "../settings";
 
 const BROADCAST_ADDR = 0xFFFFFFFF;
 
@@ -193,6 +194,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
   const [configOwner, setConfigOwner] = useState<Mesh.User>();
   const [configEditing, setConfigEditing] = useState<string | null>(null);
   const [configEditValue, setConfigEditValue] = useState("");
+  const [localMeshViewUrl, setLocalMeshViewUrl] = useState<string | undefined>(meshViewUrl);
 
   // Filter state
   const [nodesFilter, setNodesFilter] = useState("");
@@ -1533,6 +1535,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
             // Save the edit
             if (configSection === "user" && configOwner) {
               saveOwner(configEditing, configEditValue);
+            } else if (configSection === "local" && configEditing === "meshViewUrl") {
+              // Save local settings
+              const newUrl = configEditValue.trim() || undefined;
+              setSetting("meshViewUrl", newUrl);
+              setLocalMeshViewUrl(newUrl);
+              showNotification(newUrl ? `MeshView URL set to ${newUrl}` : "MeshView URL cleared");
             }
             setConfigEditing(null);
             setConfigEditValue("");
@@ -1570,6 +1578,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         if (input === "E" && configSection === "user" && configOwner) {
           setConfigEditing("shortName");
           setConfigEditValue(configOwner.shortName || "");
+          return;
+        }
+        // 'e' to edit local settings
+        if (input === "e" && configSection === "local") {
+          setConfigEditing("meshViewUrl");
+          setConfigEditValue(localMeshViewUrl || "");
           return;
         }
       }
@@ -1671,7 +1685,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
                 />
               </Box>
               <Box height={detailHeight} borderStyle="single" borderColor={theme.border.normal}>
-                <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={detailHeight - 2} nodeStore={nodeStore} scrollOffset={inspectorScrollOffset} bruteForceDepth={bruteForceDepth} meshViewUrl={meshViewUrl} />
+                <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={detailHeight - 2} nodeStore={nodeStore} scrollOffset={inspectorScrollOffset} bruteForceDepth={bruteForceDepth} meshViewUrl={localMeshViewUrl} />
               </Box>
             </>
           );
@@ -1769,6 +1783,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
               paxcounterConfig={paxcounterConfig}
               channels={configChannels}
               owner={configOwner}
+              meshViewUrl={localMeshViewUrl}
               editingField={configEditing}
               editValue={configEditValue}
             />

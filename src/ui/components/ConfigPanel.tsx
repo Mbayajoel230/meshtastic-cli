@@ -28,7 +28,8 @@ export type ConfigSection =
   | "detectionsensor"
   | "paxcounter"
   | "channels"
-  | "user";
+  | "user"
+  | "local";
 
 interface ConfigPanelProps {
   section: ConfigSection;
@@ -61,6 +62,8 @@ interface ConfigPanelProps {
   channels?: Mesh.Channel[];
   owner?: Mesh.User;
   loading?: boolean;
+  // Local settings
+  meshViewUrl?: string;
   // Editing state
   editingField?: string | null;
   editValue?: string;
@@ -69,7 +72,7 @@ interface ConfigPanelProps {
 interface MenuItem {
   key: ConfigSection;
   label: string;
-  category: "radio" | "module" | "other";
+  category: "radio" | "module" | "other" | "local";
 }
 
 const MENU_ITEMS: MenuItem[] = [
@@ -96,9 +99,11 @@ const MENU_ITEMS: MenuItem[] = [
   { key: "ambientlight", label: "Ambient Lighting", category: "module" },
   { key: "detectionsensor", label: "Detection Sensor", category: "module" },
   { key: "paxcounter", label: "Paxcounter", category: "module" },
-  // Other
+  // Other (device)
   { key: "channels", label: "Channels", category: "other" },
   { key: "user", label: "User", category: "other" },
+  // Local (CLI settings)
+  { key: "local", label: "Local Settings", category: "local" },
 ];
 
 export function ConfigPanel({
@@ -129,6 +134,9 @@ export function ConfigPanel({
   channels,
   owner,
   loading,
+  meshViewUrl,
+  editingField,
+  editValue,
 }: ConfigPanelProps) {
   if (section === "menu") {
     return (
@@ -178,6 +186,9 @@ export function ConfigPanel({
             paxcounterConfig={paxcounterConfig}
             channels={channels}
             owner={owner}
+            meshViewUrl={meshViewUrl}
+            editingField={editingField}
+            editValue={editValue}
           />
         )}
       </Box>
@@ -197,6 +208,7 @@ function ConfigMenu({
   const radioItems = MENU_ITEMS.filter((m) => m.category === "radio");
   const moduleItems = MENU_ITEMS.filter((m) => m.category === "module");
   const otherItems = MENU_ITEMS.filter((m) => m.category === "other");
+  const localItems = MENU_ITEMS.filter((m) => m.category === "local");
 
   return (
     <Box flexDirection="column" height={height} width="100%">
@@ -207,7 +219,7 @@ function ConfigMenu({
 
       <Box flexDirection="row" flexGrow={1} paddingX={1}>
         {/* Radio Config Column */}
-        <Box flexDirection="column" width="33%">
+        <Box flexDirection="column" width="25%">
           <Text color={theme.fg.muted} bold>RADIO</Text>
           {radioItems.map((item, i) => {
             const globalIndex = i;
@@ -223,7 +235,7 @@ function ConfigMenu({
         </Box>
 
         {/* Module Config Column */}
-        <Box flexDirection="column" width="33%">
+        <Box flexDirection="column" width="25%">
           <Text color={theme.fg.muted} bold>MODULES</Text>
           {moduleItems.map((item, i) => {
             const globalIndex = radioItems.length + i;
@@ -239,10 +251,26 @@ function ConfigMenu({
         </Box>
 
         {/* Other Config Column */}
-        <Box flexDirection="column" width="33%">
-          <Text color={theme.fg.muted} bold>OTHER</Text>
+        <Box flexDirection="column" width="25%">
+          <Text color={theme.fg.muted} bold>DEVICE</Text>
           {otherItems.map((item, i) => {
             const globalIndex = radioItems.length + moduleItems.length + i;
+            const isSelected = globalIndex === selectedIndex;
+            return (
+              <Box key={item.key} backgroundColor={isSelected ? theme.bg.selected : undefined}>
+                <Text color={isSelected ? theme.fg.accent : theme.fg.primary}>
+                  {isSelected ? "▶ " : "  "}{item.label}
+                </Text>
+              </Box>
+            );
+          })}
+        </Box>
+
+        {/* Local Config Column */}
+        <Box flexDirection="column" width="25%">
+          <Text color={theme.fg.muted} bold>LOCAL</Text>
+          {localItems.map((item, i) => {
+            const globalIndex = radioItems.length + moduleItems.length + otherItems.length + i;
             const isSelected = globalIndex === selectedIndex;
             return (
               <Box key={item.key} backgroundColor={isSelected ? theme.bg.selected : undefined}>
@@ -320,6 +348,8 @@ function ConfigSectionView(props: Omit<ConfigPanelProps, "section" | "selectedMe
       return <ChannelsConfigView channels={props.channels} />;
     case "user":
       return <UserConfigView owner={props.owner} editingField={props.editingField} editValue={props.editValue} />;
+    case "local":
+      return <LocalConfigView meshViewUrl={props.meshViewUrl} editingField={props.editingField} editValue={props.editValue} />;
     default:
       return <Text color={theme.fg.muted}>Section not implemented</Text>;
   }
@@ -733,6 +763,27 @@ function UserConfigView({ owner, editingField, editValue }: { owner?: Mesh.User;
       <ConfigRow label="Is Licensed" value={owner.isLicensed} />
       <ConfigRow label="Role" value={owner.role !== undefined ? Config.Config_DeviceConfig_Role[owner.role] : "Unknown"} />
       <ConfigRow label="Public Key" value={owner.publicKey?.length ? `${owner.publicKey.length} bytes` : "Not set"} />
+    </Box>
+  );
+}
+
+function LocalConfigView({ meshViewUrl, editingField, editValue }: { meshViewUrl?: string; editingField?: string | null; editValue?: string }) {
+  return (
+    <Box flexDirection="column">
+      <Box marginBottom={1}>
+        <Text color={theme.fg.secondary}>Local settings are stored on this computer, not the device.</Text>
+      </Box>
+      <EditableConfigRow
+        label="MeshView URL"
+        value={meshViewUrl || "Not set"}
+        fieldKey="meshViewUrl"
+        editingField={editingField}
+        editValue={editValue}
+        hint="(e to edit, clear to disable)"
+      />
+      <Box marginTop={1}>
+        <Text color={theme.fg.muted}>Example: https://meshview.bayme.sh</Text>
+      </Box>
     </Box>
   );
 }
