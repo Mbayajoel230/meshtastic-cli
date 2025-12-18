@@ -3,13 +3,48 @@ import { render } from "ink";
 import { PacketStore, NodeStore } from "./protocol";
 import { App } from "./ui/App";
 
-const ADDRESS = process.argv[2] || "192.168.0.123";
+// Parse CLI arguments
+const args = process.argv.slice(2);
+let address = "192.168.0.123";
+let skipConfig = false;
+let skipNodes = false;
+
+for (const arg of args) {
+  if (arg === "--skip-config") {
+    skipConfig = true;
+  } else if (arg === "--skip-nodes") {
+    skipNodes = true;
+  } else if (arg === "--help" || arg === "-h") {
+    console.log(`
+Meshtastic CLI Viewer
+
+Usage: meshtastic-cli [address] [options]
+
+Arguments:
+  address            Device address (default: 192.168.0.123)
+
+Options:
+  --skip-config      Skip loading device configuration on startup
+  --skip-nodes       Skip loading node database on startup
+  --help, -h         Show this help message
+`);
+    process.exit(0);
+  } else if (!arg.startsWith("-")) {
+    address = arg;
+  }
+}
 
 const packetStore = new PacketStore();
 const nodeStore = new NodeStore();
 
 const { waitUntilExit } = render(
-  React.createElement(App, { address: ADDRESS, packetStore, nodeStore })
+  React.createElement(App, {
+    address,
+    packetStore,
+    nodeStore,
+    skipConfig,
+    skipNodes,
+  })
 );
 
 waitUntilExit().catch((e) => {

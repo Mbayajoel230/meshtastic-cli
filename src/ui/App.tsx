@@ -24,9 +24,11 @@ interface AppProps {
   address: string;
   packetStore: PacketStore;
   nodeStore: NodeStore;
+  skipConfig?: boolean;
+  skipNodes?: boolean;
 }
 
-export function App({ address, packetStore, nodeStore }: AppProps) {
+export function App({ address, packetStore, nodeStore, skipConfig = false, skipNodes = false }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const [transport, setTransport] = useState<Transport | null>(null);
@@ -140,7 +142,9 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
           setStatus(output.status);
           if (output.status === "connected" && !configRequested) {
             configRequested = true;
-            requestConfig();
+            if (!skipConfig) {
+              requestConfig();
+            }
             fetchOwnerFallback();
           }
         } else if (output.type === "packet") {
@@ -165,7 +169,8 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
       setMyNodeNum(myInfo.myNodeNum);
     }
 
-    if (fr.payloadVariant.case === "nodeInfo") {
+    // Skip node info updates if --skip-nodes flag is set
+    if (fr.payloadVariant.case === "nodeInfo" && !skipNodes) {
       const nodeInfo = fr.payloadVariant.value;
       nodeStore.updateFromNodeInfo(nodeInfo);
     }
@@ -208,7 +213,7 @@ export function App({ address, packetStore, nodeStore }: AppProps) {
         setMessages((prev) => [...prev, msg].slice(-100));
       }
     }
-  }, [nodeStore]);
+  }, [nodeStore, skipNodes]);
 
   const requestConfig = useCallback(async () => {
     if (!transport) return;
