@@ -975,7 +975,14 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
   }, [localMeshViewUrl, nodeStore, showNotification]);
 
   const requestConfigSection = useCallback(async (section: ConfigSection) => {
-    if (!transport || !myNodeNum) return;
+    if (!transport) {
+      showNotification("Not connected");
+      return;
+    }
+    if (!myNodeNum) {
+      showNotification("Waiting for node info...");
+      return;
+    }
     setConfigLoading(true);
 
     const opts = { myNodeNum };
