@@ -26,6 +26,8 @@ const packetKeys = [
   { key: "G", desc: "Last packet (resume autoscroll)" },
   { key: "h / ←", desc: "Previous inspector tab" },
   { key: "l / →", desc: "Next inspector tab" },
+  { key: "Space", desc: "Scroll inspector down" },
+  { key: "b", desc: "Scroll inspector up" },
   { key: "+", desc: "Expand inspector pane" },
   { key: "-", desc: "Shrink inspector pane" },
 ];

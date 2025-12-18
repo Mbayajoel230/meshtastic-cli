@@ -40,6 +40,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
   const [selectedNodeIndex, setSelectedNodeIndex] = useState(0);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("info");
   const [inspectorHeight, setInspectorHeight] = useState(12);
+  const [inspectorScrollOffset, setInspectorScrollOffset] = useState(0);
   const [showHelp, setShowHelp] = useState(false);
   const [showQuitDialog, setShowQuitDialog] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(stdout?.rows || 24);
@@ -85,6 +86,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
       stdout?.off("resize", updateSize);
     };
   }, [stdout]);
+
+  // Reset inspector scroll when packet or tab changes
+  useEffect(() => {
+    setInspectorScrollOffset(0);
+  }, [selectedPacketIndex, inspectorTab]);
 
   const [myNodeNum, setMyNodeNum] = useState(0);
   const [myShortName, setMyShortName] = useState("");
@@ -400,6 +406,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
       if (input === "-" || input === "_") {
         setInspectorHeight((h) => Math.max(h - 2, 6));
       }
+      // Scroll inspector content with space/b
+      if (input === " ") {
+        setInspectorScrollOffset((o) => o + 3);
+      }
+      if (input === "b") {
+        setInspectorScrollOffset((o) => Math.max(0, o - 3));
+      }
     } else if (mode === "nodes") {
       if (input === "j" || key.downArrow) {
         setSelectedNodeIndex((i) => Math.min(i + 1, nodes.length - 1));
@@ -507,7 +520,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
               />
             </Box>
             <Box height={inspectorHeight} borderStyle="single" borderColor={theme.border.normal}>
-              <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={inspectorHeight - 2} nodeStore={nodeStore} />
+              <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={inspectorHeight - 2} nodeStore={nodeStore} scrollOffset={inspectorScrollOffset} />
             </Box>
           </>
         )}

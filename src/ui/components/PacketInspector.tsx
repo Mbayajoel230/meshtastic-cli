@@ -13,9 +13,10 @@ interface PacketInspectorProps {
   activeTab: InspectorTab;
   height?: number;
   nodeStore: NodeStore;
+  scrollOffset?: number;
 }
 
-export function PacketInspector({ packet, activeTab, height = 12, nodeStore }: PacketInspectorProps) {
+export function PacketInspector({ packet, activeTab, height = 12, nodeStore, scrollOffset = 0 }: PacketInspectorProps) {
   if (!packet) {
     return (
       <Box flexDirection="column" paddingX={1}>
@@ -27,15 +28,15 @@ export function PacketInspector({ packet, activeTab, height = 12, nodeStore }: P
 
   return (
     <Box flexDirection="column" paddingX={1} height={height}>
-      <TabBar activeTab={activeTab} />
-      {activeTab === "info" && <InfoView packet={packet} nodeStore={nodeStore} height={height - 2} />}
-      {activeTab === "json" && <JsonView packet={packet} height={height - 2} />}
-      {activeTab === "hex" && <HexView packet={packet} height={height - 2} />}
+      <TabBar activeTab={activeTab} scrollOffset={scrollOffset} />
+      {activeTab === "info" && <InfoView packet={packet} nodeStore={nodeStore} height={height - 2} scrollOffset={scrollOffset} />}
+      {activeTab === "json" && <JsonView packet={packet} height={height - 2} scrollOffset={scrollOffset} />}
+      {activeTab === "hex" && <HexView packet={packet} height={height - 2} scrollOffset={scrollOffset} />}
     </Box>
   );
 }
 
-function TabBar({ activeTab }: { activeTab: InspectorTab }) {
+function TabBar({ activeTab, scrollOffset }: { activeTab: InspectorTab; scrollOffset: number }) {
   const tabs: { key: InspectorTab; label: string }[] = [
     { key: "info", label: "INFO" },
     { key: "json", label: "JSON" },
@@ -46,7 +47,7 @@ function TabBar({ activeTab }: { activeTab: InspectorTab }) {
     <Box marginBottom={1}>
       {tabs.map((tab, i) => (
         <React.Fragment key={tab.key}>
-          {i > 0 && <Text color={theme.fg.muted}> │ </Text>}
+          {i > 0 && <Text color={theme.fg.muted}> | </Text>}
           <Text
             color={activeTab === tab.key ? theme.fg.accent : theme.fg.muted}
             bold={activeTab === tab.key}
@@ -55,13 +56,14 @@ function TabBar({ activeTab }: { activeTab: InspectorTab }) {
           </Text>
         </React.Fragment>
       ))}
-      <Text color={theme.fg.muted}>  ← h/l →</Text>
+      <Text color={theme.fg.muted}>  {`<-`} h/l {`->`}</Text>
+      {scrollOffset > 0 && <Text color={theme.fg.secondary}>  [+{scrollOffset}]</Text>}
     </Box>
   );
 }
 
 // === INFO VIEW ===
-function InfoView({ packet, nodeStore, height }: { packet: DecodedPacket; nodeStore: NodeStore; height: number }) {
+function InfoView({ packet, nodeStore, height, scrollOffset }: { packet: DecodedPacket; nodeStore: NodeStore; height: number; scrollOffset: number }) {
   const mp = packet.meshPacket;
   const fr = packet.fromRadio;
   const lines: React.ReactNode[] = [];
@@ -158,7 +160,7 @@ function InfoView({ packet, nodeStore, height }: { packet: DecodedPacket; nodeSt
     );
   }
 
-  return <Box flexDirection="column">{lines.slice(0, height)}</Box>;
+  return <Box flexDirection="column">{lines.slice(scrollOffset, scrollOffset + height)}</Box>;
 }
 
 function renderPayloadDetails(packet: DecodedPacket, nodeStore: NodeStore): React.ReactNode[] | null {
@@ -584,14 +586,15 @@ function renderFromRadioDetails(fr: Mesh.FromRadio): React.ReactNode[] | null {
 }
 
 // === JSON VIEW with syntax highlighting ===
-function JsonView({ packet, height }: { packet: DecodedPacket; height: number }) {
+function JsonView({ packet, height, scrollOffset }: { packet: DecodedPacket; height: number; scrollOffset: number }) {
   const jsonStr = formatPacketJson(packet);
-  const jsonLines = jsonStr.split("\n").slice(0, height);
+  const allLines = jsonStr.split("\n");
+  const jsonLines = allLines.slice(scrollOffset, scrollOffset + height);
 
   return (
     <Box flexDirection="column">
       {jsonLines.map((line, i) => (
-        <Box key={i}>{renderJsonLine(line)}</Box>
+        <Box key={scrollOffset + i}>{renderJsonLine(line)}</Box>
       ))}
     </Box>
   );
@@ -708,7 +711,7 @@ function replacer(_key: string, value: unknown): unknown {
 }
 
 // === HEX VIEW ===
-function HexView({ packet, height }: { packet: DecodedPacket; height: number }) {
+function HexView({ packet, height, scrollOffset }: { packet: DecodedPacket; height: number; scrollOffset: number }) {
   const bytes = packet.raw;
   const lines: React.ReactNode[] = [];
 
@@ -720,9 +723,10 @@ function HexView({ packet, height }: { packet: DecodedPacket; height: number }) 
   );
 
   const bytesPerLine = 16;
-  const maxLines = height - 2;
+  const totalHexLines = Math.ceil(bytes.length / bytesPerLine);
 
-  for (let offset = 0; offset < bytes.length && lines.length < maxLines + 1; offset += bytesPerLine) {
+  for (let lineIdx = 0; lineIdx < totalHexLines; lineIdx++) {
+    const offset = lineIdx * bytesPerLine;
     const chunk = bytes.slice(offset, offset + bytesPerLine);
     const hexParts: string[] = [];
     const asciiParts: string[] = [];
@@ -751,13 +755,5 @@ function HexView({ packet, height }: { packet: DecodedPacket; height: number }) 
     );
   }
 
-  if (bytes.length > (maxLines - 1) * bytesPerLine) {
-    lines.push(
-      <Box key="more">
-        <Text color={theme.fg.muted}>... {bytes.length - ((maxLines - 1) * bytesPerLine)} more bytes</Text>
-      </Box>
-    );
-  }
-
-  return <Box flexDirection="column">{lines}</Box>;
+  return <Box flexDirection="column">{lines.slice(scrollOffset, scrollOffset + height)}</Box>;
 }
