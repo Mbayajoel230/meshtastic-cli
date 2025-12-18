@@ -94,7 +94,7 @@ function renderPacketSummary(packet: DecodedPacket, nodeStore: NodeStore): React
           <Text color={theme.fg.muted}> [</Text>
           {route.map((n, i) => (
             <React.Fragment key={n}>
-              {i > 0 && <Text color={theme.data.arrow}> → </Text>}
+              {i > 0 && <Text color={theme.data.arrow}>{" -> "}</Text>}
               <Text color={theme.data.nodeFrom}>{nodeStore.getNodeName(n)}</Text>
             </React.Fragment>
           ))}
@@ -272,10 +272,10 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"◀"} </Text>
+        <Text color={theme.data.arrow}>{"<"} </Text>
         <Text color={color}>{portName.padEnd(14)}</Text>
         <Text color={theme.data.nodeFrom}>{fromName.padEnd(10)}</Text>
-        <Text color={theme.data.arrow}> → </Text>
+        <Text color={theme.data.arrow}>{" -> "}</Text>
         <Text color={theme.data.nodeTo}>{toName.padEnd(10)}</Text>
         {renderPacketSummary(packet, nodeStore)}
       </Box>
@@ -293,7 +293,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.nodeinfo}>{"NODEINFO".padEnd(14)}</Text>
         <Text color={theme.data.nodeFrom}>{shortName.padEnd(6)}</Text>
         <Text color={theme.fg.muted}>{id} </Text>
@@ -309,7 +309,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.direct}>{"MY_INFO".padEnd(14)}</Text>
         <Text color={theme.data.nodeFrom}>{id}</Text>
       </Box>
@@ -322,7 +322,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.config}>{"CONFIG".padEnd(14)}</Text>
         <Text color={theme.data.channel}>{configType}</Text>
       </Box>
@@ -335,7 +335,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.config}>{"MODULE_CONFIG".padEnd(14)}</Text>
         <Text color={theme.data.channel}>{configType}</Text>
       </Box>
@@ -348,7 +348,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.config}>{"CHANNEL".padEnd(14)}</Text>
         <Text color={theme.data.channel}>#{channel.index} </Text>
         <Text color={theme.fg.primary}>{name}</Text>
@@ -360,7 +360,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.direct}>{"CONFIG_COMPLETE".padEnd(14)}</Text>
       </Box>
     );
@@ -370,7 +370,7 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
     return (
       <Box backgroundColor={bgColor}>
         <Text color={theme.data.time}>[{time}] </Text>
-        <Text color={theme.data.arrow}>{"⚙"} </Text>
+        <Text color={theme.data.arrow}>{"*"} </Text>
         <Text color={theme.packet.unknown}>{variantCase.toUpperCase().padEnd(14)}</Text>
       </Box>
     );
