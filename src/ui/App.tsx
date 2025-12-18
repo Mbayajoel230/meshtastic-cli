@@ -1131,6 +1131,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       return;
     }
 
+    // Dismiss device notification on escape or space
+    if (deviceNotification && (key.escape || input === " ")) {
+      setDeviceNotification(null);
+      setDeviceNotificationRemaining(5);
+      return;
+    }
+
     // Dismiss reboot modal on any key if timed out
     if (showRebootModal && rebootElapsed >= 60) {
       setShowRebootModal(false);

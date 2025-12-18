@@ -50,7 +50,7 @@ export function DeviceNotificationModal({ message, level, remaining }: DeviceNot
       </Box>
 
       <Box marginTop={1}>
-        <Text color={theme.fg.muted}>Auto-dismiss in {remaining}s{dots}</Text>
+        <Text color={theme.fg.muted}>Auto-dismiss in {remaining}s  (Esc/Space to close)</Text>
       </Box>
     </Box>
   );
