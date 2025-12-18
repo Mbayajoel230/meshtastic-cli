@@ -6,10 +6,12 @@
 - Use official npm packages, not local references
 
 ## Design
-- **Cypherpunk aesthetic**: Use vibrant colors to differentiate data types
+- **Cypherpunk aesthetic**: Terminal hacker vibes, Matrix-style data streams
 - Colors should be bold and varied - neon greens, cyans, magentas, oranges
-- Each piece of information in packet rows should have distinct coloring
-- Think: terminal hacker vibes, Matrix-style data streams
+- Each piece of information should have distinct coloring
+- Packet type colors: message=green, position=cyan, telemetry=orange, nodeinfo=purple, routing=gray, encrypted=red
+- Wireshark-inspired packet inspector with multiple views (normalized, protobuf tree, hex dump)
+- Vim-style navigation (j/k, g/G, etc.)
 
 ## Testing
 - Test node available at http://192.168.0.123 (live Meshtastic node)
