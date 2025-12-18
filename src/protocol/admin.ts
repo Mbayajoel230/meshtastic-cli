@@ -209,6 +209,21 @@ export function createRemoveIgnoredNodeRequest(
   return createAdminPacket(admin, { ...opts, wantResponse: false });
 }
 
+// Batch editing - delays saves until commit
+export function createBeginEditSettingsRequest(opts: AdminRequestOptions): Uint8Array {
+  const admin = create(Admin.AdminMessageSchema, {
+    payloadVariant: { case: "beginEditSettings", value: true },
+  });
+  return createAdminPacket(admin, { ...opts, wantResponse: false });
+}
+
+export function createCommitEditSettingsRequest(opts: AdminRequestOptions): Uint8Array {
+  const admin = create(Admin.AdminMessageSchema, {
+    payloadVariant: { case: "commitEditSettings", value: true },
+  });
+  return createAdminPacket(admin, { ...opts, wantResponse: false });
+}
+
 // Config type labels for display
 export const CONFIG_TYPE_LABELS: Record<ConfigType, string> = {
   [ConfigType.DEVICE_CONFIG]: "Device",

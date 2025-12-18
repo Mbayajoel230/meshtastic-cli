@@ -85,6 +85,9 @@ const configKeys = [
   { key: "Enter", desc: "Select / Refresh" },
   { key: "Escape", desc: "Back to menu" },
   { key: "e / E", desc: "Edit field (User config)" },
+  { key: "b", desc: "Start batch edit mode" },
+  { key: "c", desc: "Commit batch edits" },
+  { key: "C", desc: "Cancel batch edits" },
   { key: "r", desc: "Reboot device" },
 ];
 

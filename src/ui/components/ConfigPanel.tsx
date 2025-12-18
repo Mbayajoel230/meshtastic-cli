@@ -67,6 +67,9 @@ interface ConfigPanelProps {
   // Editing state
   editingField?: string | null;
   editValue?: string;
+  // Batch edit state
+  batchEditMode?: boolean;
+  batchEditCount?: number;
 }
 
 interface MenuItem {
@@ -137,6 +140,8 @@ export function ConfigPanel({
   meshViewUrl,
   editingField,
   editValue,
+  batchEditMode,
+  batchEditCount,
 }: ConfigPanelProps) {
   if (section === "menu") {
     return (
@@ -144,6 +149,8 @@ export function ConfigPanel({
         selectedIndex={selectedMenuIndex}
         height={height}
         loading={loading}
+        batchEditMode={batchEditMode}
+        batchEditCount={batchEditCount}
       />
     );
   }
@@ -200,10 +207,14 @@ function ConfigMenu({
   selectedIndex,
   height,
   loading,
+  batchEditMode,
+  batchEditCount,
 }: {
   selectedIndex: number;
   height: number;
   loading?: boolean;
+  batchEditMode?: boolean;
+  batchEditCount?: number;
 }) {
   const radioItems = MENU_ITEMS.filter((m) => m.category === "radio");
   const moduleItems = MENU_ITEMS.filter((m) => m.category === "module");
@@ -215,6 +226,9 @@ function ConfigMenu({
       <Box paddingX={1}>
         <Text color={theme.fg.accent} bold>CONFIG</Text>
         {loading && <Text color={theme.fg.muted}> (loading...)</Text>}
+        {batchEditMode && (
+          <Text color={theme.packet.encrypted}> [BATCH MODE: {batchEditCount || 0} pending]</Text>
+        )}
       </Box>
 
       <Box flexDirection="row" flexGrow={1} paddingX={1}>
@@ -284,7 +298,11 @@ function ConfigMenu({
       </Box>
 
       <Box paddingX={1}>
-        <Text color={theme.fg.muted}>j/k navigate • Enter select • r reboot • R factory reset</Text>
+        {batchEditMode ? (
+          <Text color={theme.fg.muted}>j/k navigate • Enter select • c commit • C cancel • r reboot</Text>
+        ) : (
+          <Text color={theme.fg.muted}>j/k navigate • Enter select • b batch mode • r reboot</Text>
+        )}
       </Box>
     </Box>
   );

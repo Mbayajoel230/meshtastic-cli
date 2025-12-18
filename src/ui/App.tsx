@@ -195,6 +195,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
   const [configEditing, setConfigEditing] = useState<string | null>(null);
   const [configEditValue, setConfigEditValue] = useState("");
   const [localMeshViewUrl, setLocalMeshViewUrl] = useState<string | undefined>(meshViewUrl);
+  const [batchEditMode, setBatchEditMode] = useState(false);
+  const [batchEditCount, setBatchEditCount] = useState(0);
 
   // Filter state
   const [nodesFilter, setNodesFilter] = useState("");
@@ -935,11 +937,52 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       const binary = adminHelper.createSetOwnerRequest(updatedOwner, { myNodeNum });
       await transport.send(binary);
       setConfigOwner(updatedOwner);
-      showNotification(`Saved ${field}. Device may reboot.`);
+      if (batchEditMode) {
+        setBatchEditCount(c => c + 1);
+        showNotification(`Queued ${field} change (${batchEditCount + 1} pending)`);
+      } else {
+        showNotification(`Saved ${field}. Device may reboot.`);
+      }
     } catch {
       showNotification("Failed to save owner config");
     }
-  }, [myNodeNum, transport, configOwner, showNotification]);
+  }, [myNodeNum, transport, configOwner, showNotification, batchEditMode, batchEditCount]);
+
+  const startBatchEdit = useCallback(async () => {
+    if (!transport || !myNodeNum) return;
+    try {
+      const binary = adminHelper.createBeginEditSettingsRequest({ myNodeNum });
+      await transport.send(binary);
+      setBatchEditMode(true);
+      setBatchEditCount(0);
+      showNotification("Batch edit mode started. Changes will be queued.");
+    } catch {
+      showNotification("Failed to start batch edit mode");
+    }
+  }, [myNodeNum, transport, showNotification]);
+
+  const commitBatchEdit = useCallback(async () => {
+    if (!transport || !myNodeNum) return;
+    try {
+      const binary = adminHelper.createCommitEditSettingsRequest({ myNodeNum });
+      await transport.send(binary);
+      setBatchEditMode(false);
+      const count = batchEditCount;
+      setBatchEditCount(0);
+      setRebootReason(`Committing ${count} config changes`);
+      setRebootElapsed(0);
+      setShowRebootModal(true);
+      showNotification(`Committed ${count} changes. Device rebooting.`);
+    } catch {
+      showNotification("Failed to commit batch edit");
+    }
+  }, [myNodeNum, transport, batchEditCount, showNotification]);
+
+  const cancelBatchEdit = useCallback(() => {
+    setBatchEditMode(false);
+    setBatchEditCount(0);
+    showNotification("Batch edit cancelled. Changes discarded.");
+  }, [showNotification]);
 
   // Key input handling
   useInput((input, key) => {
@@ -1523,6 +1566,25 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
           sendRebootRequest(2);
           return;
         }
+        // 'b' to toggle batch edit mode
+        if (input === "b") {
+          if (batchEditMode) {
+            showNotification(`Batch mode active (${batchEditCount} pending). Press 'c' to commit or 'C' to cancel.`);
+          } else {
+            startBatchEdit();
+          }
+          return;
+        }
+        // 'c' to commit batch edits
+        if (input === "c" && batchEditMode) {
+          commitBatchEdit();
+          return;
+        }
+        // 'C' to cancel batch edits
+        if (input === "C" && batchEditMode) {
+          cancelBatchEdit();
+          return;
+        }
       } else {
         // Handle config editing mode
         if (configEditing) {
@@ -1786,6 +1848,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
               meshViewUrl={localMeshViewUrl}
               editingField={configEditing}
               editValue={configEditValue}
+              batchEditMode={batchEditMode}
+              batchEditCount={batchEditCount}
             />
           </Box>
         )}
