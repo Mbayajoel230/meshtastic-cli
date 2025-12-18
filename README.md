@@ -125,6 +125,7 @@ Options:
 | d | Start DM |
 | D | Direct ping (hop=0) |
 | u | Update from MeshView |
+| U | Update all unknown from MeshView |
 | m | Open position in Maps |
 | l | Lookup hardware model |
 | f | Toggle favorite |

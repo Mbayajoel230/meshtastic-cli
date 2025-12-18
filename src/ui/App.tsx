@@ -982,6 +982,71 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     }
   }, [localMeshViewUrl, nodeStore, showNotification]);
 
+  const updateAllUnknownNodesFromMeshView = useCallback(async () => {
+    if (!localMeshViewUrl) {
+      showNotification("MeshView URL not configured");
+      return;
+    }
+
+    const now = Date.now();
+    const CACHE_TTL = 5000;
+
+    // Fetch all nodes from MeshView
+    let meshViewNodes: any[];
+    if (meshViewCacheRef.current && (now - meshViewCacheRef.current.timestamp) < CACHE_TTL) {
+      meshViewNodes = meshViewCacheRef.current.data;
+      showNotification("Updating from cache...");
+    } else {
+      showNotification("Fetching all from MeshView...");
+      try {
+        const response = await fetch(`${localMeshViewUrl}/api/nodes?days_active=30`);
+        if (!response.ok) {
+          showNotification(`MeshView error: ${response.status}`);
+          return;
+        }
+
+        const data = await response.json();
+        meshViewNodes = data.nodes || data;
+
+        if (!Array.isArray(meshViewNodes)) {
+          showNotification("Invalid MeshView response format");
+          return;
+        }
+
+        meshViewCacheRef.current = { data: meshViewNodes, timestamp: now };
+      } catch (err) {
+        showNotification(`Failed to fetch: ${err instanceof Error ? err.message : "unknown error"}`);
+        return;
+      }
+    }
+
+    // Find nodes that need updating (unknown shortName)
+    const unknownNodes = nodes.filter(n => !n.shortName || n.shortName === "???");
+    let updated = 0;
+
+    for (const localNode of unknownNodes) {
+      const nodeHex = `!${localNode.num.toString(16).padStart(8, "0")}`;
+      const found = meshViewNodes.find((n: { id?: string; node_id?: number }) =>
+        n.id === nodeHex || n.node_id === localNode.num
+      );
+
+      if (found && (found.short_name || found.long_name)) {
+        nodeStore.updateFromMeshView(localNode.num, {
+          longName: found.long_name,
+          shortName: found.short_name,
+          hwModel: found.hw_model,
+          role: found.role,
+          lastLat: found.last_lat,
+          lastLong: found.last_long,
+          lastSeen: found.last_seen_us,
+        });
+        updated++;
+      }
+    }
+
+    showNotification(`Updated ${updated} of ${unknownNodes.length} unknown nodes`);
+  }, [localMeshViewUrl, nodes, nodeStore, showNotification]);
+
   const requestConfigSection = useCallback(async (section: ConfigSection) => {
     if (!transport) {
       showNotification("Not connected");
@@ -1471,6 +1536,10 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       // 'u' to update node info from MeshView
       if (input === "u" && selectedNode) {
         fetchNodeFromMeshView(selectedNode.num);
+      }
+      // 'U' (shift+u) to update all unknown nodes from MeshView
+      if (input === "U") {
+        updateAllUnknownNodesFromMeshView();
       }
     } else if (mode === "log") {
       if (input === "j" || key.downArrow) {
