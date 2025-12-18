@@ -40,6 +40,7 @@ const nodeKeys = [
   { key: "p", desc: "Request position" },
   { key: "e", desc: "Request telemetry" },
   { key: "d", desc: "Direct ping (hop=0)" },
+  { key: "m", desc: "Open position in Maps" },
   { key: "g", desc: "Google hardware model" },
 ];
 

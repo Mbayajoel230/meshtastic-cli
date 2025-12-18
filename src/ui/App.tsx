@@ -618,6 +618,16 @@ export function App({ address, packetStore, nodeStore, skipConfig = false }: App
           exec(`open "https://www.google.com/search?q=${query}"`);
         }
       }
+      if (input === "m" && nodes[selectedNodeIndex]) {
+        const node = nodes[selectedNodeIndex];
+        if (node.latitudeI != null && node.longitudeI != null) {
+          const lat = node.latitudeI / 1e7;
+          const lon = node.longitudeI / 1e7;
+          exec(`open "https://www.google.com/maps?q=${lat},${lon}"`);
+        } else {
+          showNotification("No position data for this node");
+        }
+      }
     } else if (mode === "log") {
       if (input === "j" || key.downArrow) {
         setSelectedLogIndex((i) => Math.min(i + 1, logResponses.length - 1));
