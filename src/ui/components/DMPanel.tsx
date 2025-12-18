@@ -77,7 +77,7 @@ export function DMPanel({
 
   // Right panel dimensions
   const rightPanelWidth = width - LEFT_PANEL_WIDTH - 3; // 3 for borders/padding
-  const chatHeight = height - 5; // 2-line header + input area
+  const chatHeight = height - 6; // 2-line header + separator + input area
 
   // Calculate scroll offset for messages
   const visibleMsgCount = chatHeight;
@@ -285,8 +285,8 @@ const ROLE_NAMES: Record<number, string> = {
   5: "Tracker", 6: "Sensor", 7: "TAK", 8: "Hidden", 9: "L&F", 10: "TAK+Trk",
 };
 
-function formatRole(role?: number): string {
-  if (role === undefined) return "-";
+function formatRole(role?: number | null): string {
+  if (role == null) return "-";
   return ROLE_NAMES[role] || `R${role}`;
 }
 
@@ -339,15 +339,15 @@ function NodeInfoHeader({ nodeNum, nodeStore, deleteConfirm }: NodeInfoHeaderPro
     : "-";
 
   return (
-    <Box flexDirection="column" paddingX={1}>
-      {/* Line 1: Short name, ID, long name */}
-      <Box>
+    <Box flexDirection="column">
+      <Box paddingX={1}>
+        {/* Line 1: Short name, ID, long name */}
         <Text color={theme.fg.accent} bold>{shortName}</Text>
         <Text color={theme.fg.muted}> {nodeId}</Text>
         {longName && <Text color={theme.fg.primary}> {longName}</Text>}
       </Box>
-      {/* Line 2: Role, last heard, hops, hardware */}
-      <Box>
+      <Box paddingX={1}>
+        {/* Line 2: Role, last heard, hops, hardware */}
         <Text color={theme.fg.muted}>Role:</Text>
         <Text color={theme.fg.secondary}>{role}</Text>
         <Text color={theme.fg.muted}>  Heard:</Text>
@@ -357,6 +357,8 @@ function NodeInfoHeader({ nodeNum, nodeStore, deleteConfirm }: NodeInfoHeaderPro
         <Text color={theme.fg.muted}>  HW:</Text>
         <Text color={theme.data.hardware}>{hwModel}</Text>
       </Box>
+      {/* Separator */}
+      <Box borderStyle="single" borderColor={theme.border.normal} borderTop borderBottom={false} borderLeft={false} borderRight={false} />
     </Box>
   );
 }

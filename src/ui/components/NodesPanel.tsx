@@ -405,13 +405,13 @@ const ROLE_NAMES: Record<number, string> = {
   10: "TAK+Trk",
 };
 
-function formatRole(role?: number): string {
-  if (role === undefined) return "-";
+function formatRole(role?: number | null): string {
+  if (role == null) return "-";
   return ROLE_NAMES[role] || `R${role}`;
 }
 
-function getRoleColor(role?: number): string {
-  if (role === undefined) return theme.fg.muted;
+function getRoleColor(role?: number | null): string {
+  if (role == null) return theme.fg.muted;
   // Router/Repeater = infrastructure = purple
   if (role === 2 || role === 4) return theme.packet.nodeinfo;
   // Tracker/Sensor = cyan
