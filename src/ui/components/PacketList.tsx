@@ -317,6 +317,24 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
       : "ENCRYPTED";
     const color = getPortColor(packet.portnum);
 
+    // Hop info
+    const hops = mp.hopStart != null && mp.hopLimit != null
+      ? `(${mp.hopStart - mp.hopLimit}/${mp.hopStart})`
+      : null;
+
+    // For encrypted packets, show channel and length
+    const encryptedInfo = packet.portnum === undefined && mp.payloadVariant.case === "encrypted"
+      ? (() => {
+          const encrypted = mp.payloadVariant.value as Uint8Array;
+          return (
+            <>
+              <Text color={theme.fg.muted}> ch:{mp.channel}</Text>
+              <Text color={theme.fg.muted}> {encrypted.length}B</Text>
+            </>
+          );
+        })()
+      : null;
+
     return (
       <Box backgroundColor={bgColor}>
         <Text wrap="truncate">
@@ -326,6 +344,8 @@ function PacketRow({ packet, nodeStore, isSelected }: PacketRowProps) {
           <Text color={theme.data.nodeFrom}>{fromName.padEnd(10)}</Text>
           <Text color={theme.data.arrow}>{" -> "}</Text>
           <Text color={theme.data.nodeTo}>{toName.padEnd(10)}</Text>
+          {hops && <Text color={theme.fg.muted}>{hops} </Text>}
+          {encryptedInfo}
           {renderPacketSummary(packet, nodeStore)}
         </Text>
       </Box>
