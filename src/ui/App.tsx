@@ -19,6 +19,7 @@ import { QuitDialog } from "./components/QuitDialog";
 import { ResponseModal } from "./components/ResponseModal";
 import { LogPanel } from "./components/LogPanel";
 import { RebootModal } from "./components/RebootModal";
+import { DeviceNotificationModal } from "./components/DeviceNotificationModal";
 import * as db from "../db";
 import { toBinary, create } from "@bufbuild/protobuf";
 import { formatNodeId } from "../utils/hex";
@@ -80,6 +81,10 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
   const [showRebootModal, setShowRebootModal] = useState(false);
   const [rebootReason, setRebootReason] = useState("");
   const [rebootElapsed, setRebootElapsed] = useState(0);
+
+  // Device notification modal state
+  const [deviceNotification, setDeviceNotification] = useState<{ message: string; level?: number } | null>(null);
+  const [deviceNotificationRemaining, setDeviceNotificationRemaining] = useState(5);
 
   // Spinner animation
   useEffect(() => {
@@ -144,6 +149,21 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
       setRebootReason("");
     }
   }, [showRebootModal, status]);
+
+  // Device notification auto-dismiss timer
+  useEffect(() => {
+    if (!deviceNotification) return;
+    const interval = setInterval(() => {
+      setDeviceNotificationRemaining(r => {
+        if (r <= 1) {
+          setDeviceNotification(null);
+          return 5;
+        }
+        return r - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [deviceNotification]);
 
   const [myNodeNum, setMyNodeNum] = useState(0);
   const [myShortName, setMyShortName] = useState("");
@@ -271,6 +291,15 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
         });
         return next;
       });
+    }
+
+    // Handle device notifications - show in modal
+    if (fr.payloadVariant.case === "clientNotification") {
+      const notif = fr.payloadVariant.value as { level?: number; message?: string };
+      if (notif.message) {
+        setDeviceNotification({ message: notif.message, level: notif.level });
+        setDeviceNotificationRemaining(5);
+      }
     }
 
     if (fr.payloadVariant.case === "packet" && packet.meshPacket) {
@@ -2077,6 +2106,23 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, brute
             reason={rebootReason}
             elapsed={rebootElapsed}
             timeout={60}
+          />
+        </Box>
+      )}
+
+      {deviceNotification && (
+        <Box
+          position="absolute"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
+          <DeviceNotificationModal
+            message={deviceNotification.message}
+            level={deviceNotification.level}
+            remaining={deviceNotificationRemaining}
           />
         </Box>
       )}
