@@ -1422,6 +1422,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if (input === "u" && selectedPacket?.meshPacket) {
         fetchNodeFromMeshView(selectedPacket.meshPacket.from);
       }
+      // 'o' to open packet in MeshView
+      if (input === "o" && selectedPacket?.meshPacket?.id && localMeshViewUrl) {
+        const packetId = selectedPacket.meshPacket.id;
+        if (packetId !== 0) {
+          exec(`open "${localMeshViewUrl}/packet/${packetId}"`);
+        }
+      }
     } else if (mode === "nodes") {
       // Compute filtered nodes for length checks
       const filteredNodes = nodesFilter

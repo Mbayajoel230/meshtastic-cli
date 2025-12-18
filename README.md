@@ -112,6 +112,7 @@ Options:
 | m | Open position in Maps |
 | n/Enter | Jump to sender node |
 | u | Update node from MeshView |
+| o | Open packet in MeshView |
 
 ### Nodes View
 
