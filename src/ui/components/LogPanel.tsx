@@ -2,8 +2,9 @@ import React from "react";
 import { Box, Text } from "ink";
 import { theme } from "../theme";
 import type { NodeStore } from "../../protocol/node-store";
-import type { DbPositionResponse, DbTracerouteResponse, LogResponse } from "../../db";
+import type { DbPositionResponse, DbTracerouteResponse, DbNodeInfoResponse, LogResponse } from "../../db";
 import { formatNodeId } from "../../utils/hex";
+import { Mesh } from "@meshtastic/protobufs";
 
 interface LogPanelProps {
   responses: LogResponse[];
@@ -16,13 +17,13 @@ export function LogPanel({ responses, selectedIndex, height, nodeStore }: LogPan
   if (responses.length === 0) {
     return (
       <Box flexDirection="column" paddingX={1} paddingY={1} height={height}>
-        <Text color={theme.fg.muted}>No position or traceroute responses logged yet.</Text>
+        <Text color={theme.fg.muted}>No responses logged yet.</Text>
         <Text> </Text>
         <Text color={theme.fg.secondary}>In NODES view, use:</Text>
         <Text color={theme.data.nodeFrom}>  p</Text><Text color={theme.fg.muted}> - Request position</Text>
         <Text color={theme.data.nodeFrom}>  t</Text><Text color={theme.fg.muted}> - Traceroute</Text>
         <Text color={theme.data.nodeFrom}>  D</Text><Text color={theme.fg.muted}> - Direct ping (hop=0)</Text>
-        <Text color={theme.data.nodeFrom}>  e</Text><Text color={theme.fg.muted}> - Request telemetry</Text>
+        <Text color={theme.data.nodeFrom}>  i</Text><Text color={theme.fg.muted}> - Request node info</Text>
       </Box>
     );
   }
@@ -99,6 +100,10 @@ function isPositionResponse(r: LogResponse): r is DbPositionResponse {
   return "latitudeI" in r;
 }
 
+function isNodeInfoResponse(r: LogResponse): r is DbNodeInfoResponse {
+  return "longName" in r || "shortName" in r;
+}
+
 function LogRow({ response, isSelected, nodeStore }: {
   response: LogResponse;
   isSelected: boolean;
@@ -106,8 +111,9 @@ function LogRow({ response, isSelected, nodeStore }: {
 }) {
   const bgColor = isSelected ? theme.bg.selected : undefined;
   const isPosition = isPositionResponse(response);
-  const type = isPosition ? "POSITION" : "TRACEROUTE";
-  const typeColor = isPosition ? theme.packet.position : theme.packet.traceroute;
+  const isNodeInfo = isNodeInfoResponse(response);
+  const type = isPosition ? "POSITION" : isNodeInfo ? "NODEINFO" : "TRACEROUTE";
+  const typeColor = isPosition ? theme.packet.position : isNodeInfo ? theme.packet.nodeinfo : theme.packet.traceroute;
   const fromName = nodeStore.getNodeName(response.fromNode);
   const time = new Date(response.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
 
@@ -167,6 +173,38 @@ function LogInspector({ response, nodeStore, height }: {
             <Text color={theme.fg.primary}>{pos.satsInView}</Text>
           </Box>
         )}
+      </Box>
+    );
+  }
+
+  // NodeInfo response
+  if (isNodeInfoResponse(response)) {
+    const ni = response;
+    const hwModelName = ni.hwModel != null ? Mesh.HardwareModel[ni.hwModel] || `Unknown (${ni.hwModel})` : "Unknown";
+
+    return (
+      <Box flexDirection="column" paddingX={1}>
+        <Box>
+          <Text color={theme.fg.muted}>From: </Text>
+          <Text color={theme.fg.accent}>{fromName}</Text>
+          <Text color={theme.fg.muted}> ({formatNodeId(ni.fromNode)})</Text>
+        </Box>
+        {ni.longName && (
+          <Box>
+            <Text color={theme.fg.muted}>Long Name: </Text>
+            <Text color={theme.packet.nodeinfo}>{ni.longName}</Text>
+          </Box>
+        )}
+        {ni.shortName && (
+          <Box>
+            <Text color={theme.fg.muted}>Short Name: </Text>
+            <Text color={theme.packet.nodeinfo}>{ni.shortName}</Text>
+          </Box>
+        )}
+        <Box>
+          <Text color={theme.fg.muted}>Hardware: </Text>
+          <Text color={theme.fg.primary}>{hwModelName}</Text>
+        </Box>
       </Box>
     );
   }

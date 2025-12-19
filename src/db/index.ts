@@ -134,6 +134,20 @@ export function initDb(session: string = "default") {
 
   db.run(`CREATE INDEX IF NOT EXISTS idx_position_responses_timestamp ON position_responses(timestamp)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_traceroute_responses_timestamp ON traceroute_responses(timestamp)`);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS nodeinfo_responses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      packet_id INTEGER,
+      from_node INTEGER,
+      requested_by INTEGER,
+      long_name TEXT,
+      short_name TEXT,
+      hw_model INTEGER,
+      timestamp INTEGER
+    )
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_nodeinfo_responses_timestamp ON nodeinfo_responses(timestamp)`);
 }
 
 export function clearDb(session: string = "default") {
@@ -439,7 +453,18 @@ export interface DbTracerouteResponse {
   timestamp: number;
 }
 
-export type LogResponse = DbPositionResponse | DbTracerouteResponse;
+export interface DbNodeInfoResponse {
+  id?: number;
+  packetId: number;
+  fromNode: number;
+  requestedBy: number;
+  longName?: string;
+  shortName?: string;
+  hwModel?: number;
+  timestamp: number;
+}
+
+export type LogResponse = DbPositionResponse | DbTracerouteResponse | DbNodeInfoResponse;
 
 export function insertPositionResponse(response: DbPositionResponse) {
   db.run(`
@@ -503,11 +528,41 @@ export function getTracerouteResponses(limit = 100): DbTracerouteResponse[] {
   }));
 }
 
+export function insertNodeInfoResponse(response: DbNodeInfoResponse) {
+  db.run(`
+    INSERT INTO nodeinfo_responses (packet_id, from_node, requested_by, long_name, short_name, hw_model, timestamp)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `, [
+    response.packetId,
+    response.fromNode,
+    response.requestedBy,
+    response.longName ?? null,
+    response.shortName ?? null,
+    response.hwModel ?? null,
+    response.timestamp,
+  ]);
+}
+
+export function getNodeInfoResponses(limit = 100): DbNodeInfoResponse[] {
+  const rows = db.query(`SELECT * FROM nodeinfo_responses ORDER BY timestamp DESC LIMIT ?`).all(limit) as any[];
+  return rows.reverse().map((row) => ({
+    id: row.id,
+    packetId: row.packet_id,
+    fromNode: row.from_node,
+    requestedBy: row.requested_by,
+    longName: row.long_name,
+    shortName: row.short_name,
+    hwModel: row.hw_model,
+    timestamp: row.timestamp,
+  }));
+}
+
 export function getLogResponses(limit = 100): LogResponse[] {
   const positions = getPositionResponses(limit);
   const traceroutes = getTracerouteResponses(limit);
+  const nodeinfos = getNodeInfoResponses(limit);
   // Merge and sort by timestamp
-  const all = [...positions, ...traceroutes];
+  const all = [...positions, ...traceroutes, ...nodeinfos];
   all.sort((a, b) => a.timestamp - b.timestamp);
   return all.slice(-limit);
 }

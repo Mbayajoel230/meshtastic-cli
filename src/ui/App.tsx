@@ -66,7 +66,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
   const [showQuitDialog, setShowQuitDialog] = useState(false);
   const [showResponseModal, setShowResponseModal] = useState(false);
   const [responseModalData, setResponseModalData] = useState<{
-    type: "position" | "traceroute";
+    type: "position" | "traceroute" | "nodeinfo";
     fromNode: number;
     data: unknown;
   } | null>(null);
@@ -370,6 +370,24 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         db.insertTracerouteResponse(trResponse);
         setLogResponses(prev => [...prev, trResponse].slice(-100));
         setResponseModalData({ type: "traceroute", fromNode: mp.from, data: route });
+        setShowResponseModal(true);
+      }
+
+      // Detect nodeinfo responses directed to us
+      if (packet.portnum === Portnums.PortNum.NODEINFO_APP && packet.payload && mp.to === myNodeNum) {
+        const user = packet.payload as Mesh.User;
+        const niResponse: db.DbNodeInfoResponse = {
+          packetId: mp.id,
+          fromNode: mp.from,
+          requestedBy: myNodeNum,
+          longName: user.longName,
+          shortName: user.shortName,
+          hwModel: user.hwModel,
+          timestamp: Math.floor(Date.now() / 1000),
+        };
+        db.insertNodeInfoResponse(niResponse);
+        setLogResponses(prev => [...prev, niResponse].slice(-100));
+        setResponseModalData({ type: "nodeinfo", fromNode: mp.from, data: user });
         setShowResponseModal(true);
       }
 

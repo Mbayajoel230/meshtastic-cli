@@ -3,10 +3,10 @@ import { Box, Text, useInput } from "ink";
 import { theme } from "../theme";
 import type { NodeStore } from "../../protocol/node-store";
 import { formatNodeId } from "../../utils/hex";
-import type { Mesh } from "@meshtastic/protobufs";
+import { Mesh } from "@meshtastic/protobufs";
 
 interface ResponseModalProps {
-  type: "position" | "traceroute";
+  type: "position" | "traceroute" | "nodeinfo";
   fromNode: number;
   data: unknown;
   nodeStore: NodeStore;
@@ -29,20 +29,25 @@ export function ResponseModal({ type, fromNode, data, nodeStore, onDismiss }: Re
 
   const nodeName = nodeStore.getNodeName(fromNode);
 
+  const borderColor = type === "position" ? theme.packet.position
+    : type === "nodeinfo" ? theme.packet.nodeinfo
+    : theme.packet.traceroute;
+  const title = type === "position" ? "POSITION RESPONSE"
+    : type === "nodeinfo" ? "NODEINFO RESPONSE"
+    : "TRACEROUTE RESPONSE";
+
   return (
     <Box
       flexDirection="column"
       borderStyle="double"
-      borderColor={type === "position" ? theme.packet.position : theme.packet.traceroute}
+      borderColor={borderColor}
       backgroundColor={theme.bg.primary}
       paddingX={3}
       paddingY={1}
       minWidth={40}
     >
       <Box justifyContent="center" marginBottom={1}>
-        <Text bold color={type === "position" ? theme.packet.position : theme.packet.traceroute}>
-          {type === "position" ? "POSITION RESPONSE" : "TRACEROUTE RESPONSE"}
-        </Text>
+        <Text bold color={borderColor}>{title}</Text>
       </Box>
 
       <Box marginBottom={1}>
@@ -53,6 +58,7 @@ export function ResponseModal({ type, fromNode, data, nodeStore, onDismiss }: Re
 
       {type === "position" && <PositionDetails data={data as Mesh.Position} />}
       {type === "traceroute" && <TracerouteDetails data={data} nodeStore={nodeStore} />}
+      {type === "nodeinfo" && <NodeInfoDetails data={data as Mesh.User} />}
 
       <Box marginTop={1} justifyContent="center">
         <Text color={theme.fg.muted}>Press Escape or Space to dismiss (auto-close 5s)</Text>
@@ -126,6 +132,31 @@ function TracerouteDetails({ data, nodeStore }: { data: unknown; nodeStore: Node
           </Box>
         );
       })}
+    </Box>
+  );
+}
+
+function NodeInfoDetails({ data }: { data: Mesh.User }) {
+  const hwModelName = data.hwModel != null ? Mesh.HardwareModel[data.hwModel] || `Unknown (${data.hwModel})` : "Unknown";
+
+  return (
+    <Box flexDirection="column">
+      {data.longName && (
+        <Box>
+          <Text color={theme.fg.muted}>Long Name: </Text>
+          <Text color={theme.packet.nodeinfo}>{data.longName}</Text>
+        </Box>
+      )}
+      {data.shortName && (
+        <Box>
+          <Text color={theme.fg.muted}>Short Name: </Text>
+          <Text color={theme.packet.nodeinfo}>{data.shortName}</Text>
+        </Box>
+      )}
+      <Box>
+        <Text color={theme.fg.muted}>Hardware: </Text>
+        <Text color={theme.fg.primary}>{hwModelName}</Text>
+      </Box>
     </Box>
   );
 }
