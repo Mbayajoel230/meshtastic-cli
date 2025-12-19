@@ -122,6 +122,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       setTerminalHeight(stdout?.rows || 24);
       setTerminalWidth(stdout?.columns || 80);
     };
+    // Update immediately on mount to get correct initial size
+    updateSize();
     stdout?.on("resize", updateSize);
     return () => {
       stdout?.off("resize", updateSize);
