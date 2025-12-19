@@ -67,7 +67,7 @@ let skipConfig = false;
 let skipNodes = false;
 let session = "default";
 let clearSession = false;
-let bruteForceDepth = 2;
+let bruteForceDepth = 0;
 let meshViewUrl: string | undefined;
 
 for (let i = 0; i < args.length; i++) {
@@ -102,7 +102,7 @@ Options:
   --skip-config      Skip loading device configuration on startup (faster connect)
   --skip-nodes       Skip downloading node database on startup (much faster connect)
                      Uses magic nonce 69420 to request config without nodes
-  --brute-force, -b  Brute force depth for encrypted packets (0-4, default: 2)
+  --brute-force, -b  Brute force depth for encrypted packets (0-4, default: 0)
                      0=disabled, 1=256 keys, 2=65K keys, 3=16M keys, 4=4B keys
   --meshview, -m     MeshView URL for packet/node links (default: from settings or disabled)
                      Use "default" for ${DEFAULT_MESHVIEW_URL}

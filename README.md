@@ -84,7 +84,7 @@ Options:
   --clear            Clear the database for the session and exit
   --skip-config      Skip loading device configuration on startup
   --skip-nodes       Skip downloading node database (faster connect)
-  --brute-force, -b  Brute force depth for encrypted packets (0-4, default: 2)
+  --brute-force, -b  Brute force depth for encrypted packets (0-4, default: 0)
   --meshview, -m     MeshView URL for packet/node links
   --help, -h         Show help
 ```
