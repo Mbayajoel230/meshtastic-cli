@@ -29,6 +29,7 @@ const packetKeys = [
   { key: "+ / -", desc: "Resize inspector" },
   { key: "m", desc: "Open position in Maps" },
   { key: "n / Enter", desc: "Jump to sender node" },
+  { key: "o", desc: "Open packet in MeshView" },
   { key: "u", desc: "Update node from MeshView" },
 ];
 
@@ -39,16 +40,18 @@ const nodeKeys = [
   { key: "Ctrl+u/PgUp", desc: "Page up" },
   { key: "g / G", desc: "First / Last node" },
   { key: "/", desc: "Filter nodes" },
+  { key: "H/S/B/A/V", desc: "Sort: Hops/SNR/Battery/Age/Favs" },
   { key: "t", desc: "Traceroute to node" },
   { key: "p", desc: "Request position" },
   { key: "e", desc: "Request telemetry" },
+  { key: "i", desc: "Request node info" },
   { key: "d", desc: "Start DM with node" },
   { key: "D", desc: "Direct ping (hop=0)" },
-  { key: "u", desc: "Update from MeshView" },
+  { key: "u / U", desc: "Update from MeshView (one/all)" },
   { key: "m", desc: "Open position in Maps" },
   { key: "l", desc: "Lookup hardware model" },
   { key: "f", desc: "Toggle favorite" },
-  { key: "i", desc: "Toggle ignored" },
+  { key: "I", desc: "Toggle ignored" },
   { key: "x", desc: "Remove node from DB" },
 ];
 
@@ -66,12 +69,14 @@ const chatKeys = [
   { key: "R", desc: "Resend failed message" },
   { key: "Enter", desc: "Focus input" },
   { key: "Escape", desc: "Unfocus / Exit chat" },
-  { key: "Ctrl+E", desc: "Emoji selector (in input)" },
+  { key: "Alt+E", desc: "Emoji selector (in input)" },
 ];
 
 const dmKeys = [
   { key: "j / ↓", desc: "Next conversation/message" },
   { key: "k / ↑", desc: "Previous conversation/message" },
+  { key: "l / →", desc: "Enter message selection" },
+  { key: "h / ←", desc: "Back to conversations" },
   { key: "g / G", desc: "First / Last" },
   { key: "n", desc: "Go to node" },
   { key: "u", desc: "Update node from MeshView" },
@@ -86,12 +91,15 @@ const configKeys = [
   { key: "j / ↓", desc: "Next option" },
   { key: "k / ↑", desc: "Previous option" },
   { key: "g / G", desc: "First / Last option" },
-  { key: "Enter", desc: "Select / Refresh" },
+  { key: "Enter", desc: "Select / Edit toggle" },
   { key: "Escape", desc: "Back to menu" },
-  { key: "e / E", desc: "Edit field (User config)" },
+  { key: "e", desc: "Edit channel name" },
+  { key: "p", desc: "Edit channel PSK" },
+  { key: "r", desc: "Cycle channel role" },
+  { key: "u / D", desc: "Toggle uplink / downlink" },
   { key: "c", desc: "Commit changes" },
   { key: "C", desc: "Discard changes" },
-  { key: "r", desc: "Reboot device" },
+  { key: "R", desc: "Reboot device" },
 ];
 
 const logKeys = [

@@ -163,6 +163,7 @@ export function ConfigPanel({
   meshViewUrl,
   editingField,
   editValue,
+  selectedFieldIndex,
   selectedChannelIndex,
   batchEditMode,
   batchEditCount,
@@ -226,6 +227,7 @@ export function ConfigPanel({
             meshViewUrl={meshViewUrl}
             editingField={editingField}
             editValue={editValue}
+            selectedFieldIndex={selectedFieldIndex}
             selectedChannelIndex={selectedChannelIndex}
           />
         )}
@@ -441,8 +443,8 @@ function SelectableConfigRow({ label, value, isSelected, isEditing, editValue, v
 
   return (
     <Box backgroundColor={isSelected && !isEditing ? theme.bg.selected : undefined}>
-      <Text color={isSelected ? theme.fg.accent : theme.fg.muted}>{isSelected ? "▶ " : "  "}</Text>
-      <Text color={theme.fg.muted}>{label.padEnd(22)}</Text>
+      <Text color={isSelected ? theme.fg.accent : theme.fg.muted}>{isSelected ? "> " : "  "}</Text>
+      <Text color={theme.fg.muted}>{label.padEnd(26)}</Text>
       {isEditing ? (
         <>
           <Text color={theme.fg.accent}>{editValue}</Text>
