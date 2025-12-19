@@ -39,6 +39,15 @@ function LiveIndicator({ error }: { error?: string | null }) {
   );
 }
 
+// Format temperature with proper unit
+function formatTemp(celsius: number, useFahrenheit: boolean): string {
+  if (useFahrenheit) {
+    const f = celsius * 9 / 5 + 32;
+    return `${f.toFixed(1)}°F`;
+  }
+  return `${celsius.toFixed(1)}°C`;
+}
+
 // Get port color based on portnum
 function getPortColor(portnum: number): string {
   switch (portnum) {
@@ -62,7 +71,7 @@ function getPortName(portnum: number): string {
 }
 
 // Render colorized payload summary
-function renderPayloadSummary(payload: string, portnum: number): React.ReactNode {
+function renderPayloadSummary(payload: string, portnum: number, useFahrenheit: boolean = false): React.ReactNode {
   if (!payload) return null;
 
   try {
@@ -136,7 +145,7 @@ function renderPayloadSummary(payload: string, portnum: number): React.ReactNode
       const em = parsed.environmentMetrics;
       return (
         <>
-          {em.temperature != null && <Text color={theme.data.coords}> {em.temperature.toFixed(1)}°C</Text>}
+          {em.temperature != null && <Text color={theme.data.coords}> {formatTemp(em.temperature, useFahrenheit)}</Text>}
           {em.relativeHumidity != null && <Text color={theme.data.percent}> {em.relativeHumidity.toFixed(0)}%rh</Text>}
           {em.barometricPressure != null && <Text color={theme.data.voltage}> {em.barometricPressure.toFixed(0)}hPa</Text>}
         </>
@@ -191,6 +200,7 @@ interface MeshViewPacketListProps {
   selectedIndex: number;
   height?: number;
   error?: string | null;
+  useFahrenheit?: boolean;
 }
 
 // Column header for MeshView packet list
@@ -204,7 +214,8 @@ function MeshViewPacketListHeader() {
         <Text color={theme.fg.muted}>{"FROM".padEnd(6)}</Text>
         <Text color={theme.fg.muted}>{"    "}</Text>
         <Text color={theme.fg.muted}>{"TO".padEnd(6)}</Text>
-        <Text color={theme.fg.muted}>{" CH".padEnd(6)}</Text>
+        <Text color={theme.fg.muted}> </Text>
+        <Text color={theme.fg.muted}>{"CHANNEL".padEnd(12)}</Text>
         <Text color={theme.fg.muted}>DATA</Text>
       </Text>
     </Box>
@@ -215,7 +226,8 @@ export function MeshViewPacketList({
   packets,
   selectedIndex,
   height = 20,
-  error
+  error,
+  useFahrenheit = false
 }: MeshViewPacketListProps) {
   // Reserve space for LIVE indicator and header
   const visibleCount = Math.max(1, height - 3);
@@ -245,6 +257,7 @@ export function MeshViewPacketList({
             key={`${packet.id}-${actualIndex}`}
             packet={packet}
             isSelected={isSelected}
+            useFahrenheit={useFahrenheit}
           />
         );
       })}
@@ -260,6 +273,7 @@ export function MeshViewPacketList({
 interface MeshViewPacketRowProps {
   packet: MeshViewPacket;
   isSelected: boolean;
+  useFahrenheit: boolean;
 }
 
 // Extract short name from long name (first 4 chars) or use node ID
@@ -270,7 +284,7 @@ function getShortName(longName: string | undefined, nodeId: number): string {
   return formatNodeId(nodeId);
 }
 
-function MeshViewPacketRow({ packet, isSelected }: MeshViewPacketRowProps) {
+function MeshViewPacketRow({ packet, isSelected, useFahrenheit }: MeshViewPacketRowProps) {
   const time = new Date(packet.import_time).toLocaleTimeString("en-US", { hour12: false });
   const bgColor = isSelected ? theme.bg.selected : undefined;
   const portName = getPortName(packet.portnum);
@@ -284,6 +298,8 @@ function MeshViewPacketRow({ packet, isSelected }: MeshViewPacketRowProps) {
       ? "^mqtt"
       : getShortName(packet.to_long_name, packet.to_node_id);
 
+  const channel = (packet.channel || "?").slice(0, 10).padEnd(10);
+
   return (
     <Box backgroundColor={bgColor}>
       <Text wrap="truncate">
@@ -293,8 +309,8 @@ function MeshViewPacketRow({ packet, isSelected }: MeshViewPacketRowProps) {
         <Text color={theme.data.nodeFrom}>{fitVisual(fromName, 6)}</Text>
         <Text color={theme.data.arrow}>{" -> "}</Text>
         <Text color={theme.data.nodeTo}>{fitVisual(toName, 6)}</Text>
-        <Text color={theme.data.channel}> ch:{packet.channel || "?"}</Text>
-        {renderPayloadSummary(packet.payload, packet.portnum)}
+        <Text color={theme.data.channel}> {channel} </Text>
+        {renderPayloadSummary(packet.payload, packet.portnum, useFahrenheit)}
       </Text>
     </Box>
   );
@@ -309,6 +325,7 @@ interface MeshViewInspectorProps {
   height?: number;
   scrollOffset?: number;
   meshViewUrl?: string;
+  useFahrenheit?: boolean;
 }
 
 export function MeshViewInspector({
@@ -316,7 +333,8 @@ export function MeshViewInspector({
   activeTab,
   height = 12,
   scrollOffset = 0,
-  meshViewUrl
+  meshViewUrl,
+  useFahrenheit = false
 }: MeshViewInspectorProps) {
   if (!packet) {
     return (
@@ -334,9 +352,9 @@ export function MeshViewInspector({
       <MeshViewTabBar activeTab={activeTab} scrollOffset={scrollOffset} />
       <Box flexDirection="column" overflow="hidden">
         {activeTab === "info" ? (
-          <MeshViewInfoView packet={packet} height={height - 2} scrollOffset={scrollOffset} meshViewUrl={meshViewUrl} />
+          <MeshViewInfoView packet={packet} height={height - 2} scrollOffset={scrollOffset} meshViewUrl={meshViewUrl} useFahrenheit={useFahrenheit} />
         ) : (
-          <MeshViewJsonView packet={packet} height={height - 2} scrollOffset={scrollOffset} />
+          <MeshViewJsonView packet={packet} height={height - 2} scrollOffset={scrollOffset} useFahrenheit={useFahrenheit} />
         )}
       </Box>
     </Box>
@@ -519,10 +537,16 @@ function toBase64String(str: string): string {
   return btoa(binary);
 }
 
-// Transform payload to convert integer coords to real floats, timestamps to dates, and binary to hex/base64
-function transformPayload(payload: unknown): unknown {
+// Check if a key is a temperature field
+function isTemperatureField(key: string): boolean {
+  const k = key.toLowerCase();
+  return k === "temperature" || k.includes("temp");
+}
+
+// Transform payload to convert integer coords to real floats, timestamps to dates, binary to hex/base64, and temperatures
+function transformPayload(payload: unknown, useFahrenheit: boolean = false): unknown {
   if (typeof payload !== "object" || payload === null) return payload;
-  if (Array.isArray(payload)) return payload.map(transformPayload);
+  if (Array.isArray(payload)) return payload.map(item => transformPayload(item, useFahrenheit));
 
   const obj = payload as Record<string, unknown>;
   const result: Record<string, unknown> = {};
@@ -536,6 +560,14 @@ function transformPayload(payload: unknown): unknown {
     } else if (typeof value === "number" && isUnixTimestamp(key, value)) {
       // Convert Unix timestamp to formatted date
       result[key] = new Date(value * 1000).toLocaleString();
+    } else if (typeof value === "number" && isTemperatureField(key)) {
+      // Convert temperature with proper unit
+      if (useFahrenheit) {
+        const f = value * 9 / 5 + 32;
+        result[key] = `${f.toFixed(1)}°F`;
+      } else {
+        result[key] = `${value.toFixed(1)}°C`;
+      }
     } else if (typeof value === "string" && isHexField(key)) {
       // Convert binary strings to hex (macaddr)
       result[key] = toHexString(value);
@@ -543,7 +575,7 @@ function transformPayload(payload: unknown): unknown {
       // Convert binary strings to base64 (public_key, psk)
       result[key] = toBase64String(value);
     } else if (typeof value === "object" && value !== null) {
-      result[key] = transformPayload(value);
+      result[key] = transformPayload(value, useFahrenheit);
     } else {
       result[key] = value;
     }
@@ -673,7 +705,7 @@ function renderPayloadFields(obj: Record<string, unknown>, indent: number = 0, k
   return lines;
 }
 
-function MeshViewInfoView({ packet, height, scrollOffset, meshViewUrl }: { packet: MeshViewPacket; height: number; scrollOffset: number; meshViewUrl?: string }) {
+function MeshViewInfoView({ packet, height, scrollOffset, meshViewUrl, useFahrenheit }: { packet: MeshViewPacket; height: number; scrollOffset: number; meshViewUrl?: string; useFahrenheit: boolean }) {
   const allLines: React.ReactNode[] = [];
 
   // From info
@@ -751,7 +783,7 @@ function MeshViewInfoView({ packet, height, scrollOffset, meshViewUrl }: { packe
   if (packet.payload) {
     const parsed = parsePayload(packet.payload);
     if (parsed) {
-      const transformed = transformPayload(parsed) as Record<string, unknown>;
+      const transformed = transformPayload(parsed, useFahrenheit) as Record<string, unknown>;
       allLines.push(...renderPayloadFields(transformed));
     } else {
       // Raw display fallback
@@ -769,7 +801,7 @@ function MeshViewInfoView({ packet, height, scrollOffset, meshViewUrl }: { packe
   );
 }
 
-function MeshViewJsonView({ packet, height, scrollOffset }: { packet: MeshViewPacket; height: number; scrollOffset: number }) {
+function MeshViewJsonView({ packet, height, scrollOffset, useFahrenheit }: { packet: MeshViewPacket; height: number; scrollOffset: number; useFahrenheit: boolean }) {
   // Format the entire packet as JSON with syntax highlighting
   const fullPacket = {
     id: packet.id,
@@ -785,7 +817,7 @@ function MeshViewJsonView({ packet, height, scrollOffset }: { packet: MeshViewPa
     payload: (() => {
       const parsed = parsePayload(packet.payload);
       if (parsed) {
-        return transformPayload(parsed);
+        return transformPayload(parsed, useFahrenheit);
       }
       return packet.payload;
     })(),

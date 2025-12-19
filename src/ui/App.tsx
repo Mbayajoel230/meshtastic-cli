@@ -2831,6 +2831,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
                   selectedIndex={selectedMeshViewIndex}
                   height={listHeight}
                   error={meshViewError}
+                  useFahrenheit={useFahrenheit}
                 />
               </Box>
               <Box height={detailHeight} borderStyle="single" borderColor={theme.border.normal}>
@@ -2840,6 +2841,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
                   height={detailHeight - 2}
                   scrollOffset={meshViewInspectorScrollOffset}
                   meshViewUrl={localMeshViewUrl}
+                  useFahrenheit={useFahrenheit}
                 />
               </Box>
             </>
