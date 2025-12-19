@@ -1585,13 +1585,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if (input === "2") { setMode("nodes"); setChatInputFocused(false); setDmInputFocused(false); return; }
       if (input === "3") { setMode("chat"); return; }
       if (input === "4") { setMode("dm"); return; }
-      if (input === "5") { setMode("config"); setChatInputFocused(false); setDmInputFocused(false); if (!batchEditMode) startBatchEdit(); return; }
-      if (input === "6") { setMode("log"); setChatInputFocused(false); setDmInputFocused(false); return; }
-      if (input === "7" && localMeshViewUrl) { setMode("meshview"); setChatInputFocused(false); setDmInputFocused(false); return; }
+      if (input === "5") { setMode("log"); setChatInputFocused(false); setDmInputFocused(false); return; }
+      if (input === "6" && localMeshViewUrl) { setMode("meshview"); setChatInputFocused(false); setDmInputFocused(false); return; }
+      if (input === (localMeshViewUrl ? "7" : "6")) { setMode("config"); setChatInputFocused(false); setDmInputFocused(false); if (!batchEditMode) startBatchEdit(); return; }
       // Bracket keys for tab switching
       const modes: AppMode[] = localMeshViewUrl
-        ? ["packets", "nodes", "chat", "dm", "config", "log", "meshview"]
-        : ["packets", "nodes", "chat", "dm", "config", "log"];
+        ? ["packets", "nodes", "chat", "dm", "log", "meshview", "config"]
+        : ["packets", "nodes", "chat", "dm", "log", "config"];
       if (input === "[") {
         const idx = modes.indexOf(mode);
         const newMode = modes[(idx - 1 + modes.length) % modes.length];
@@ -2674,8 +2674,6 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         {" "}
         <Text color={d ? theme.fg.accent : theme.fg.muted} bold={d}>[DM]</Text>
         {" "}
-        <Text color={cfg ? theme.fg.accent : theme.fg.muted} bold={cfg}>[CONFIG]</Text>
-        {" "}
         <Text color={l ? theme.fg.accent : theme.fg.muted} bold={l}>[LOG]</Text>
         {localMeshViewUrl && (
           <>
@@ -2683,6 +2681,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
             <Text color={mv ? theme.fg.accent : theme.fg.muted} bold={mv}>[MESHVIEW]</Text>
           </>
         )}
+        {" "}
+        <Text color={cfg ? theme.fg.accent : theme.fg.muted} bold={cfg}>[CONFIG]</Text>
       </Text>
     );
   };

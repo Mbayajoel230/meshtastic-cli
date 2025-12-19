@@ -33,8 +33,8 @@ A terminal UI for monitoring and configuring Meshtastic mesh networks. Connects 
 
 - **Packets view** - Live packet stream with detailed inspection (decoded payload, JSON, hex dump)
 - **Nodes view** - Discovered nodes with signal quality, battery, position, hardware, favorites
-- **Chat view** - Send and receive channel messages with emoji support
-- **DM view** - Direct messages with delivery confirmation and resend support
+- **Chat view** - Send and receive channel messages with emoji support and delivery status
+- **DM view** - Direct messages with delivery status and resend support
 - **Config view** - View and edit device configuration with batch mode
 - **Log view** - Position, traceroute, and nodeinfo response history
 - **Node commands** - Traceroute, position/telemetry/nodeinfo request, direct ping, DM
@@ -99,7 +99,7 @@ Options:
 
 | Key | Action |
 |-----|--------|
-| 1-6 | Switch to view |
+| 1-7 | Switch to view (7 with MeshView) |
 | [ / ] | Previous / Next view |
 | Ctrl+L | Redraw screen |
 | q | Quit |
@@ -203,6 +203,19 @@ Options:
 | p | Edit encryption key (PSK) |
 | u | Toggle uplink |
 | D | Toggle downlink |
+
+## Message Status Indicators
+
+In Chat and DM views, messages show delivery status:
+
+| Indicator | Meaning |
+|-----------|---------|
+| `[...]` | Pending - waiting for acknowledgment |
+| `[✓]` | Acknowledged - recipient confirmed receipt |
+| `[✗]` | Failed - delivery failed or timed out |
+| `[M]` | MeshView confirmed - packet seen on MeshView server |
+
+The `[M]` indicator also appears in the Packets view when a MeshView URL is configured. This confirms the packet was received by the MeshView aggregation server, which is useful for verifying mesh propagation.
 
 ## Terminal Compatibility
 
