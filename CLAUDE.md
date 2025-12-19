@@ -1,5 +1,8 @@
 # Meshtastic CLI Viewer
 
+## Releasing
+Update version in package.json before tagging: `npm version <major|minor|patch> --no-git-tag-version`
+
 ## Code Style
 - Keep code brief and concise
 - Minimize comments - code should be self-explanatory
