@@ -543,6 +543,12 @@ function isTemperatureField(key: string): boolean {
   return k === "temperature" || k.includes("temp");
 }
 
+// Check if a key is a battery level field
+function isBatteryLevelField(key: string): boolean {
+  const k = key.toLowerCase();
+  return k === "batterylevel" || k === "battery_level";
+}
+
 // Transform payload to convert integer coords to real floats, timestamps to dates, binary to hex/base64, and temperatures
 function transformPayload(payload: unknown, useFahrenheit: boolean = false): unknown {
   if (typeof payload !== "object" || payload === null) return payload;
@@ -568,6 +574,9 @@ function transformPayload(payload: unknown, useFahrenheit: boolean = false): unk
       } else {
         result[key] = `${value.toFixed(1)}°C`;
       }
+    } else if (typeof value === "number" && isBatteryLevelField(key)) {
+      // Format battery level as percentage or "Powered" if > 100
+      result[key] = value > 100 ? "Powered" : `${value}%`;
     } else if (typeof value === "string" && isHexField(key)) {
       // Convert binary strings to hex (macaddr)
       result[key] = toHexString(value);
