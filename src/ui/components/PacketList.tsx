@@ -60,7 +60,7 @@ function PacketListHeader() {
         <Text color={theme.fg.muted}>{"    "}</Text>
         <Text color={theme.fg.muted}>{"TO".padEnd(10)}</Text>
         <Text color={theme.fg.muted}>{"HOPS".padEnd(7)}</Text>
-        <Text color={theme.fg.muted}>DATA</Text>
+        <Text color={theme.fg.muted}> DATA</Text>
       </Text>
     </Box>
   );
@@ -404,7 +404,7 @@ function PacketRow({ packet, nodeStore, isSelected, useFahrenheit, meshViewConfi
           const encrypted = mp.payloadVariant.value as Uint8Array;
           return (
             <>
-              <Text color={theme.data.channel}>ch:{mp.channel}</Text>
+              <Text color={theme.data.channel}> ch:{mp.channel}</Text>
               <Text color={theme.fg.secondary}> {encrypted.length}B</Text>
             </>
           );
