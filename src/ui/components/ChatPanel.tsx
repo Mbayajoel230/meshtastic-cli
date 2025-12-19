@@ -25,6 +25,8 @@ export const FIRMWARE_EMOJIS = [
   { emoji: "🌫️", name: "fog" },
   { emoji: "😈", name: "devil" },
   { emoji: "♥️", name: "heart" },
+  { emoji: "☕", name: "coffee" },
+  { emoji: "💤", name: "zzz" },
 ];
 
 function AnimatedDots() {

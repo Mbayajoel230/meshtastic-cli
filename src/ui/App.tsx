@@ -1455,6 +1455,17 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           setSelectedNodeIndex(0);
           return;
         }
+        // Emacs keybindings
+        if (key.ctrl && input === "w") {
+          setNodesFilter(s => s.replace(/\s*\S*$/, ""));
+          setSelectedNodeIndex(0);
+          return;
+        }
+        if (key.ctrl && (input === "k" || input === "u")) {
+          setNodesFilter("");
+          setSelectedNodeIndex(0);
+          return;
+        }
         if (input && !key.ctrl && !key.meta) {
           setNodesFilter(s => s + input);
           setSelectedNodeIndex(0);
@@ -1568,7 +1579,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       }
     } else if (mode === "chat") {
       const channelMessages = messages.filter((m) => m.channel === chatChannel);
-      const emojiCount = 15; // FIRMWARE_EMOJIS.length
+      const emojiCount = 17; // FIRMWARE_EMOJIS.length
 
       // Emoji selector mode
       if (showEmojiSelector) {
@@ -1586,7 +1597,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         }
         if (key.return) {
           // Import emoji and insert - need to get from ChatPanel
-          const emojis = ["👋", "👍", "👎", "❓", "‼️", "💩", "🤣", "🤠", "🐭", "☀️", "☔", "☁️", "🌫️", "😈", "♥️"];
+          const emojis = ["👋", "👍", "👎", "❓", "‼️", "💩", "🤣", "🤠", "🐭", "☀️", "☔", "☁️", "🌫️", "😈", "♥️", "☕", "💤"];
           setChatInput((s) => s + emojis[emojiSelectorIndex]);
           setShowEmojiSelector(false);
           return;
@@ -1610,8 +1621,19 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           setChatInput((s) => s.slice(0, -1));
           return;
         }
-        // Ctrl+E for emoji selector
-        if (key.ctrl && input === "e") {
+        // Emacs keybindings
+        if (key.ctrl && input === "w") {
+          // Delete last word
+          setChatInput((s) => s.replace(/\s*\S*$/, ""));
+          return;
+        }
+        if (key.ctrl && (input === "k" || input === "u")) {
+          // Kill line (clear input)
+          setChatInput("");
+          return;
+        }
+        // Alt+E for emoji selector
+        if (key.meta && input === "e") {
           setShowEmojiSelector(true);
           setEmojiSelectorIndex(0);
           return;
@@ -1634,6 +1656,17 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         }
         if (key.backspace || key.delete) {
           setChatFilter(s => s.slice(0, -1));
+          setSelectedChatMessageIndex(-1);
+          return;
+        }
+        // Emacs keybindings
+        if (key.ctrl && input === "w") {
+          setChatFilter(s => s.replace(/\s*\S*$/, ""));
+          setSelectedChatMessageIndex(-1);
+          return;
+        }
+        if (key.ctrl && (input === "k" || input === "u")) {
+          setChatFilter("");
           setSelectedChatMessageIndex(-1);
           return;
         }
@@ -1769,6 +1802,15 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         }
         if (key.backspace || key.delete) {
           setDmInput((s) => s.slice(0, -1));
+          return;
+        }
+        // Emacs keybindings
+        if (key.ctrl && input === "w") {
+          setDmInput((s) => s.replace(/\s*\S*$/, ""));
+          return;
+        }
+        if (key.ctrl && (input === "k" || input === "u")) {
+          setDmInput("");
           return;
         }
         if (input && !key.ctrl && !key.meta) {
@@ -2046,6 +2088,15 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           }
           if (key.backspace || key.delete) {
             setConfigEditValue(s => s.slice(0, -1));
+            return;
+          }
+          // Emacs keybindings
+          if (key.ctrl && input === "w") {
+            setConfigEditValue(s => s.replace(/\s*\S*$/, ""));
+            return;
+          }
+          if (key.ctrl && (input === "k" || input === "u")) {
+            setConfigEditValue("");
             return;
           }
           if (input && !key.ctrl && !key.meta) {

@@ -152,7 +152,7 @@ Options:
 | u | Update node from MeshView |
 | R | Resend failed message |
 | Enter | Focus input |
-| Ctrl+E | Emoji selector |
+| Alt+E | Emoji selector |
 | Escape | Unfocus / Exit |
 
 ### DM View
