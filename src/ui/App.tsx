@@ -1264,8 +1264,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       return;
     }
 
-    // Quit - show confirmation dialog (allow in chat when input not focused)
-    if ((input === "q" || input === "Q") && (mode !== "chat" || !chatInputFocused)) {
+    // Check if any text input is focused (for suppressing global shortcuts)
+    const isInputFocused = chatInputFocused || dmInputFocused || nodesFilterInput || chatFilterInput || configEditing !== null;
+
+    // Quit - show confirmation dialog (but not when input is focused)
+    if ((input === "q" || input === "Q") && !isInputFocused) {
       setShowQuitDialog(true);
       return;
     }
@@ -1273,9 +1276,6 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       setShowQuitDialog(true);
       return;
     }
-
-    // Toggle help (but not when input is focused)
-    const isInputFocused = (mode === "chat" && chatInputFocused) || (mode === "dm" && dmInputFocused);
     if (input === "?" && !isInputFocused) {
       setShowHelp((h) => !h);
       return;
@@ -1302,9 +1302,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       return;
     }
 
-    // Mode switching (allow in chat/dm only when input not focused)
-    const inputFocused = (mode === "chat" && chatInputFocused) || (mode === "dm" && dmInputFocused);
-    if (!inputFocused) {
+    // Mode switching (allow only when input not focused)
+    if (!isInputFocused) {
       if (input === "1") { setMode("packets"); setChatInputFocused(false); setDmInputFocused(false); return; }
       if (input === "2") { setMode("nodes"); setChatInputFocused(false); setDmInputFocused(false); return; }
       if (input === "3") { setMode("chat"); return; }
