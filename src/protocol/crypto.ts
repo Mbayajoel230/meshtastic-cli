@@ -178,23 +178,19 @@ function extractPayload(data: Uint8Array): { portnum?: number; payload?: Uint8Ar
   return { portnum };
 }
 
-// Generator that yields key candidates for brute forcing
-// Only tries practically recoverable keys:
-// - Simple keys 1-10 (expand to default template - these are the main target)
-// - Optionally all 256 single-byte keys (for edge case of arbitrary byte like 0x42)
-// Multi-byte brute force (65K+ keys) is useless since real PSKs are 16/32 bytes
-function* keyGenerator(depth: number): Generator<Uint8Array> {
-  // First try simple keys 1-10 (will use default template via expandKey)
+// Generator that yields all 256 single-byte key candidates
+// Simple keys 1-10 expand to default template keys (the main target)
+// Other single-byte keys cover edge cases
+// Multi-byte brute force is useless since real PSKs are 16/32 bytes
+function* keyGenerator(): Generator<Uint8Array> {
+  // Try simple keys 1-10 first (most likely to succeed)
   for (let k = 1; k <= 10; k++) {
     yield new Uint8Array([k]);
   }
-
-  // If depth >= 2, also try all 256 single-byte keys (edge case)
-  if (depth >= 2) {
-    for (let k = 0; k < 256; k++) {
-      if (k >= 1 && k <= 10) continue; // Already tried
-      yield new Uint8Array([k]);
-    }
+  // Then try remaining single-byte keys
+  for (let k = 0; k < 256; k++) {
+    if (k >= 1 && k <= 10) continue;
+    yield new Uint8Array([k]);
   }
 }
 
@@ -202,7 +198,6 @@ export interface BruteForceOptions {
   encrypted: Uint8Array;
   packetId: number;
   fromNode: number;
-  depth: number; // 1 = simple keys 1-10, 2 = all 256 single-byte keys
   onProgress?: (progress: BruteForceProgress) => void;
   signal?: { cancelled: boolean };
   chunkSize?: number;
@@ -211,17 +206,14 @@ export interface BruteForceOptions {
 export async function bruteForceDecrypt(
   options: BruteForceOptions
 ): Promise<DecryptResult | null> {
-  const { encrypted, packetId, fromNode, depth, onProgress, signal, chunkSize = 1000 } = options;
-
-  if (depth <= 0 || depth > 2) return null;
+  const { encrypted, packetId, fromNode, onProgress, signal, chunkSize = 1000 } = options;
 
   const nonce = buildNonce(packetId, fromNode);
-  // Total keys: depth 1 = 10 simple keys, depth 2 = 256 single-byte keys
-  const total = depth === 1 ? 10 : 256;
+  const total = 256;
   let current = 0;
   const startTime = Date.now();
 
-  const gen = keyGenerator(depth);
+  const gen = keyGenerator();
 
   while (true) {
     if (signal?.cancelled) return null;

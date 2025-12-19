@@ -67,7 +67,6 @@ let skipConfig = false;
 let skipNodes = false;
 let session = "default";
 let clearSession = false;
-let bruteForceDepth = 0;
 let meshViewUrl: string | undefined;
 let useFahrenheit = false;
 
@@ -81,11 +80,6 @@ for (let i = 0; i < args.length; i++) {
     session = args[++i] || "default";
   } else if (arg === "--clear") {
     clearSession = true;
-  } else if (arg === "--brute-force" || arg === "-b") {
-    const val = parseInt(args[++i], 10);
-    if (!isNaN(val) && val >= 0 && val <= 2) {
-      bruteForceDepth = val;
-    }
   } else if (arg === "--meshview" || arg === "-m") {
     meshViewUrl = args[++i];
   } else if (arg === "--fahrenheit" || arg === "-F") {
@@ -105,8 +99,6 @@ Options:
   --skip-config      Skip loading device configuration on startup (faster connect)
   --skip-nodes       Skip downloading node database on startup (much faster connect)
                      Uses magic nonce 69420 to request config without nodes
-  --brute-force, -b  Try to decrypt with default keys (0-2, default: 0)
-                     0=disabled, 1=simple keys 1-10, 2=all 256 single-byte keys
   --meshview, -m     MeshView URL for packet/node links (default: from settings or disabled)
                      Use "default" for ${DEFAULT_MESHVIEW_URL}
   --fahrenheit, -F   Display temperatures in Fahrenheit instead of Celsius
@@ -149,7 +141,6 @@ const { waitUntilExit } = render(
     nodeStore,
     skipConfig,
     skipNodes,
-    bruteForceDepth,
     meshViewUrl: resolvedMeshViewUrl,
     useFahrenheit,
   })

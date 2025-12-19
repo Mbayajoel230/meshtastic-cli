@@ -36,7 +36,6 @@ interface PacketInspectorProps {
   height?: number;
   nodeStore: NodeStore;
   scrollOffset?: number;
-  bruteForceDepth?: number;
   meshViewUrl?: string;
   useFahrenheit?: boolean;
 }
@@ -49,7 +48,7 @@ interface BruteForceState {
   result: DecryptResult | null;
 }
 
-export function PacketInspector({ packet, activeTab, height = 12, nodeStore, scrollOffset = 0, bruteForceDepth = 2, meshViewUrl, useFahrenheit = false }: PacketInspectorProps) {
+export function PacketInspector({ packet, activeTab, height = 12, nodeStore, scrollOffset = 0, meshViewUrl, useFahrenheit = false }: PacketInspectorProps) {
   const [bruteForce, setBruteForce] = useState<BruteForceState>({
     status: "idle",
     progress: null,
@@ -78,7 +77,7 @@ export function PacketInspector({ packet, activeTab, height = 12, nodeStore, scr
     cancelRef.current.cancelled = true;
 
     // Reset state if packet changed or not encrypted
-    if (!isEncrypted || !mp || bruteForceDepth <= 0) {
+    if (!isEncrypted || !mp) {
       setBruteForce({ status: "idle", progress: null, result: null });
       lastPacketIdRef.current = null;
       return;
@@ -99,7 +98,6 @@ export function PacketInspector({ packet, activeTab, height = 12, nodeStore, scr
       encrypted,
       packetId: mp.id,
       fromNode: mp.from,
-      depth: bruteForceDepth,
       signal,
       chunkSize: 500,
       onProgress: (progress) => {
@@ -123,7 +121,7 @@ export function PacketInspector({ packet, activeTab, height = 12, nodeStore, scr
     return () => {
       signal.cancelled = true;
     };
-  }, [packet?.id, packet?.meshPacket?.id, bruteForceDepth, activeTab]);
+  }, [packet?.id, packet?.meshPacket?.id, activeTab]);
 
   // Cancel brute force when tab changes away from info
   useEffect(() => {
