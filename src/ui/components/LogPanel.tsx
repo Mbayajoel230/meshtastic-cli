@@ -3,9 +3,8 @@ import { Box, Text } from "ink";
 import { theme } from "../theme";
 import type { NodeStore } from "../../protocol/node-store";
 import type { DbPositionResponse, DbTracerouteResponse, DbNodeInfoResponse, LogResponse } from "../../db";
-import { formatNodeId } from "../../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../../utils";
 import { fitVisual } from "../../utils/string-width";
-import { Mesh } from "@meshtastic/protobufs";
 
 interface LogPanelProps {
   responses: LogResponse[];
@@ -157,7 +156,7 @@ function LogInspector({ response, nodeStore, height }: {
   // NodeInfo response
   if (isNodeInfoResponse(response)) {
     const ni = response;
-    const hwModelName = ni.hwModel != null ? Mesh.HardwareModel[ni.hwModel] || `Unknown (${ni.hwModel})` : "Unknown";
+    const hwModelName = getHardwareModelName(ni.hwModel);
 
     return (
       <>

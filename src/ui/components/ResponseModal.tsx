@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import { theme } from "../theme";
 import type { NodeStore } from "../../protocol/node-store";
-import { formatNodeId } from "../../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../../utils";
 import { Mesh } from "@meshtastic/protobufs";
 
 interface ResponseModalProps {
@@ -137,7 +137,7 @@ function TracerouteDetails({ data, nodeStore }: { data: unknown; nodeStore: Node
 }
 
 function NodeInfoDetails({ data }: { data: Mesh.User }) {
-  const hwModelName = data.hwModel != null ? Mesh.HardwareModel[data.hwModel] || `Unknown (${data.hwModel})` : "Unknown";
+  const hwModelName = getHardwareModelName(data.hwModel);
 
   return (
     <Box flexDirection="column">

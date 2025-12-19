@@ -4,7 +4,7 @@ import { theme } from "../theme";
 import type { DecodedPacket } from "../../protocol/decoder";
 import type { NodeStore } from "../../protocol/node-store";
 import { Mesh, Portnums, Telemetry, StoreForward, Channel, Config } from "@meshtastic/protobufs";
-import { formatNodeId } from "../../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../../utils";
 import { fitVisual } from "../../utils/string-width";
 
 function LiveIndicator() {
@@ -171,7 +171,7 @@ function renderPacketSummary(packet: DecodedPacket, nodeStore: NodeStore, useFah
       <>
         {user.longName && <Text color={theme.fg.primary}> {user.longName}</Text>}
         {user.hwModel !== undefined && user.hwModel !== 0 && (
-          <Text color={theme.data.hardware}> | {Mesh.HardwareModel[user.hwModel] || `HW_${user.hwModel}`}</Text>
+          <Text color={theme.data.hardware}> | {getHardwareModelName(user.hwModel)}</Text>
         )}
       </>
     );
@@ -410,7 +410,7 @@ function PacketRow({ packet, nodeStore, isSelected, useFahrenheit }: PacketRowPr
     const shortName = info.user?.shortName || `!${info.num.toString(16)}`;
     const longName = info.user?.longName || "";
     const hw = info.user?.hwModel !== undefined && info.user?.hwModel !== 0
-      ? Mesh.HardwareModel[info.user.hwModel] || ""
+      ? getHardwareModelName(info.user.hwModel)
       : "";
     const id = formatNodeId(info.num);
     return (
@@ -550,7 +550,7 @@ function PacketRow({ packet, nodeStore, isSelected, useFahrenheit }: PacketRowPr
 
   if (variantCase === "metadata") {
     const meta = fr.payloadVariant.value as Mesh.DeviceMetadata;
-    const hw = meta.hwModel !== undefined ? Mesh.HardwareModel[meta.hwModel] || `HW_${meta.hwModel}` : "";
+    const hw = meta.hwModel !== undefined ? getHardwareModelName(meta.hwModel) : "";
     return (
       <Box backgroundColor={bgColor}>
         <Text wrap="truncate">

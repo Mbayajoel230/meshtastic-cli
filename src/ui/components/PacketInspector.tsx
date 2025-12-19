@@ -5,7 +5,7 @@ import type { DecodedPacket } from "../../protocol/decoder";
 import type { NodeStore } from "../../protocol/node-store";
 import { bruteForceDecrypt, portnumToString, type DecryptResult, type BruteForceProgress } from "../../protocol/crypto";
 import { Mesh, Portnums, Channel, Telemetry, Config } from "@meshtastic/protobufs";
-import { formatNodeId } from "../../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../../utils";
 
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
@@ -456,7 +456,7 @@ function renderPayloadDetails(packet: DecodedPacket, nodeStore: NodeStore, useFa
       <Box key="node-hw">
         <Text color={theme.fg.muted}>Hardware: </Text>
         <Text color={theme.fg.secondary}>
-          {user.hwModel !== undefined ? Mesh.HardwareModel[user.hwModel] || `Model_${user.hwModel}` : "Unknown"}
+          {getHardwareModelName(user.hwModel)}
         </Text>
         {user.role !== undefined && user.role !== 0 && (
           <>
@@ -795,7 +795,7 @@ function renderFromRadioDetails(fr: Mesh.FromRadio): React.ReactNode[] | null {
         lines.push(
           <Box key="hw">
             <Text color={theme.fg.muted}>HW: </Text>
-            <Text color={theme.fg.secondary}>{Mesh.HardwareModel[info.user.hwModel] || info.user.hwModel}</Text>
+            <Text color={theme.fg.secondary}>{getHardwareModelName(info.user.hwModel)}</Text>
           </Box>
         );
       }
@@ -995,7 +995,7 @@ function renderFromRadioDetails(fr: Mesh.FromRadio): React.ReactNode[] | null {
 
     case "metadata": {
       const meta = variant.value as Mesh.DeviceMetadata;
-      const hw = meta.hwModel !== undefined ? Mesh.HardwareModel[meta.hwModel] || `Model_${meta.hwModel}` : null;
+      const hw = meta.hwModel !== undefined ? getHardwareModelName(meta.hwModel) : null;
       lines.push(
         <Box key="type">
           <Text color={theme.fg.muted}>Type: </Text>

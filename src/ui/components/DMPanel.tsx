@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text } from "ink";
-import { Mesh } from "@meshtastic/protobufs";
 import { theme } from "../theme";
 import type { DbMessage, DMConversation } from "../../db";
 import type { NodeStore } from "../../protocol/node-store";
-import { formatNodeId } from "../../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../../utils";
 import { fitVisual } from "../../utils/string-width";
 
 const MESSAGE_TIMEOUT_MS = 30000;
@@ -345,7 +344,7 @@ function NodeInfoHeader({ nodeNum, nodeStore, deleteConfirm }: NodeInfoHeaderPro
   const lastHeard = formatLastHeard(node?.lastHeard);
   const hops = node?.hopsAway !== undefined ? `${node.hopsAway}` : "-";
   const hwModel = node?.hwModel !== undefined
-    ? (Mesh.HardwareModel[node.hwModel] || `HW_${node.hwModel}`).replace(/_/g, " ")
+    ? getHardwareModelName(node.hwModel).replace(/_/g, " ")
     : "-";
 
   return (

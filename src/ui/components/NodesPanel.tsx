@@ -2,9 +2,8 @@ import React from "react";
 import { Box, Text } from "ink";
 import { theme } from "../theme";
 import type { NodeData } from "../../protocol/node-store";
-import { formatNodeId } from "../../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../../utils";
 import { stringWidth, truncateVisual, padEndVisual } from "../../utils/string-width";
-import { Mesh } from "@meshtastic/protobufs";
 
 type NodeSortKey = "hops" | "snr" | "battery" | "time" | "favorites";
 
@@ -146,7 +145,7 @@ function NodeRow({ node, isSelected }: NodeRowProps) {
 
   const favStar = node.isFavorite ? "★" : " ";
   const hwModel = node.hwModel !== undefined
-    ? (Mesh.HardwareModel[node.hwModel] || `HW_${node.hwModel}`).replace("_", " ")
+    ? getHardwareModelName(node.hwModel).replace(/_/g, " ")
     : "";
   const role = formatRoleChar(node.role);
 
@@ -205,7 +204,7 @@ function NodeInspector({ node, height }: { node?: NodeData; height: number }) {
       {node.hwModel !== undefined && (
         <>
           <Text color={theme.fg.muted}>  Hardware: </Text>
-          <Text color={theme.data.hardware}>{Mesh.HardwareModel[node.hwModel] || `MODEL_${node.hwModel}`}</Text>
+          <Text color={theme.data.hardware}>{getHardwareModelName(node.hwModel)}</Text>
         </>
       )}
     </Box>

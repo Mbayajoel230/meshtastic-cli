@@ -22,7 +22,7 @@ import { RebootModal } from "./components/RebootModal";
 import { DeviceNotificationModal } from "./components/DeviceNotificationModal";
 import * as db from "../db";
 import { toBinary, create } from "@bufbuild/protobuf";
-import { formatNodeId } from "../utils/hex";
+import { formatNodeId, getHardwareModelName } from "../utils";
 import { exec } from "child_process";
 import { setSetting } from "../settings";
 import packageJson from "../../package.json";
@@ -1708,8 +1708,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         sendTraceroute(selectedNode.num, 0); // Direct ping
       }
       if (input === "l" && selectedNode?.hwModel) {
-        const hwName = Mesh.HardwareModel[selectedNode.hwModel!];
-        if (hwName) {
+        const hwName = getHardwareModelName(selectedNode.hwModel);
+        if (hwName && hwName !== "Unknown") {
           const query = encodeURIComponent(`Meshtastic ${hwName}`);
           exec(`open "https://www.google.com/search?q=${query}"`);
         }

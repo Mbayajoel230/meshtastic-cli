@@ -3,6 +3,7 @@ import { Box, Text } from "ink";
 import { theme } from "../theme";
 import { Config, ModuleConfig, Admin, Mesh, Channel } from "@meshtastic/protobufs";
 import { CONFIG_TYPE_LABELS, MODULE_CONFIG_TYPE_LABELS, ConfigType, ModuleConfigType } from "../../protocol/admin";
+import { getHardwareModelName } from "../../utils";
 
 // Animated loading spinner
 function LoadingSpinner({ text = "Loading" }: { text?: string }) {
@@ -1436,7 +1437,7 @@ function UserConfigView({ owner, editingField, editValue }: { owner?: Mesh.User;
       <EditableConfigRow label="Long Name" value={owner.longName} fieldKey="longName" editingField={editingField} editValue={editValue} hint="(e to edit)" />
       <EditableConfigRow label="Short Name" value={owner.shortName} fieldKey="shortName" editingField={editingField} editValue={editValue} hint="(E to edit)" />
       <ConfigRow label="ID" value={owner.id} />
-      <ConfigRow label="Hardware Model" value={owner.hwModel !== undefined ? Mesh.HardwareModel[owner.hwModel] : "Unknown"} valueColor={theme.data.hardware} />
+      <ConfigRow label="Hardware Model" value={getHardwareModelName(owner.hwModel)} valueColor={theme.data.hardware} />
       <ConfigRow label="Is Licensed" value={owner.isLicensed} />
       <ConfigRow label="Role" value={owner.role !== undefined ? Config.Config_DeviceConfig_Role[owner.role] : "Unknown"} />
       <ConfigRow label="Public Key" value={owner.publicKey?.length ? `${owner.publicKey.length} bytes` : "Not set"} />
