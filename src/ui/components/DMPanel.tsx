@@ -5,6 +5,7 @@ import { theme } from "../theme";
 import type { DbMessage, DMConversation } from "../../db";
 import type { NodeStore } from "../../protocol/node-store";
 import { formatNodeId } from "../../utils/hex";
+import { fitVisual } from "../../utils/string-width";
 
 const MESSAGE_TIMEOUT_MS = 30000;
 
@@ -136,7 +137,7 @@ export function DMPanel({
                 paddingX={1}
               >
                 <Text color="#ffcc00">{isFavorite ? "★" : " "}</Text>
-                <Text color={isSelected ? theme.fg.accent : theme.fg.primary}>{shortName.slice(0, 5).padEnd(6)}</Text>
+                <Text color={isSelected ? theme.fg.accent : theme.fg.primary}>{fitVisual(shortName, 5)} </Text>
                 <Text color={theme.fg.muted}>{shortId}</Text>
                 {convo.unreadCount > 0 && <Text color={theme.status.online}> •</Text>}
               </Box>
@@ -270,7 +271,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth }: Messag
     <Box backgroundColor={isSelected ? theme.bg.selected : undefined}>
       <Text wrap="truncate">
         <Text color={theme.fg.muted}>[{time}] </Text>
-        <Text color={nameColor}>{fromName.slice(0, 8).padEnd(9)}</Text>
+        <Text color={nameColor}>{fitVisual(fromName, 8)} </Text>
         <Text color={theme.fg.primary}>{displayText}</Text>
         {getStatusIndicator()}
       </Text>

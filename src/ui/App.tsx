@@ -2461,7 +2461,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
   const statusColor = status === "connected" ? theme.status.online : theme.status.offline;
   const nodeCount = nodes.length;
 
-  const helpHint = `v${packageJson.version} [?] Help`;
+  const helpHint = `v${packageJson.version} | [?] Help`;
 
   // Show connecting screen
   if (!transport) {

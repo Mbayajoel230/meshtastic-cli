@@ -4,6 +4,7 @@ import { theme } from "../theme";
 import type { NodeStore } from "../../protocol/node-store";
 import type { DbPositionResponse, DbTracerouteResponse, DbNodeInfoResponse, LogResponse } from "../../db";
 import { formatNodeId } from "../../utils/hex";
+import { fitVisual } from "../../utils/string-width";
 import { Mesh } from "@meshtastic/protobufs";
 
 interface LogPanelProps {
@@ -115,7 +116,7 @@ function LogRow({ response, isSelected, nodeStore }: {
     <Text>
       <Text color={theme.fg.accent}>{prefix}</Text>
       <Text color={typeColor}>{type.padEnd(12)}</Text>
-      <Text color={theme.fg.accent}>{fromName.slice(0, 10).padEnd(12)}</Text>
+      <Text color={theme.fg.accent}>{fitVisual(fromName, 10)}  </Text>
       <Text color={theme.fg.secondary}>{time}</Text>
     </Text>
   );

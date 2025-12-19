@@ -5,6 +5,7 @@ import { theme } from "../theme";
 import type { DbMessage } from "../../db";
 import type { NodeStore } from "../../protocol/node-store";
 import type { ChannelInfo } from "../App";
+import { fitVisual } from "../../utils/string-width";
 
 const MESSAGE_TIMEOUT_MS = 30000;
 
@@ -360,7 +361,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width }: MessageRow
           {lineIndex === 0 ? (
             <Text>
               <Text color={theme.fg.muted}>[{time}] </Text>
-              <Text color={nameColor}>{fromName.padEnd(10)}</Text>
+              <Text color={nameColor}>{fitVisual(fromName, 10)}</Text>
               <Text> </Text>
             </Text>
           ) : (

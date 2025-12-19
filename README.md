@@ -201,6 +201,15 @@ Options:
 | u | Toggle uplink |
 | D | Toggle downlink |
 
+## Terminal Compatibility
+
+For proper emoji and Unicode character display, ensure your terminal uses Unicode-compliant width calculations:
+
+- **Ghostty** - Uses Unicode widths by default (`grapheme-width-method = unicode`)
+- **Kitty** - Uses Unicode widths by default
+- **iTerm2** - Enable in Preferences → Profiles → Text → "Unicode version 9+ widths"
+- **Terminal.app** - May have issues with some emoji
+
 ## License
 
 MIT

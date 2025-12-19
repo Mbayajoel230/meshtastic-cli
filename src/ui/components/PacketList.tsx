@@ -5,6 +5,7 @@ import type { DecodedPacket } from "../../protocol/decoder";
 import type { NodeStore } from "../../protocol/node-store";
 import { Mesh, Portnums, Telemetry, StoreForward, Channel, Config } from "@meshtastic/protobufs";
 import { formatNodeId } from "../../utils/hex";
+import { fitVisual } from "../../utils/string-width";
 
 function LiveIndicator() {
   const [frame, setFrame] = useState(0);
@@ -393,9 +394,9 @@ function PacketRow({ packet, nodeStore, isSelected, useFahrenheit }: PacketRowPr
           <Text color={theme.data.time}>[{time}]  </Text>
           <Text color={theme.data.arrow}>{"<"} </Text>
           <Text color={color}>{portName.padEnd(14)} </Text>
-          <Text color={theme.data.nodeFrom}>{fromName.padEnd(10)}</Text>
+          <Text color={theme.data.nodeFrom}>{fitVisual(fromName, 10)}</Text>
           <Text color={theme.data.arrow}>{" -> "}</Text>
-          <Text color={theme.data.nodeTo}>{toName.padEnd(10)}</Text>
+          <Text color={theme.data.nodeTo}>{fitVisual(toName, 10)}</Text>
           <Text color={theme.fg.muted}>{hops}</Text>
           {encryptedInfo}
           {renderPacketSummary(packet, nodeStore, useFahrenheit)}

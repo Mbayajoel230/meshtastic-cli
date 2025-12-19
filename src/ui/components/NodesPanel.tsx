@@ -3,39 +3,8 @@ import { Box, Text } from "ink";
 import { theme } from "../theme";
 import type { NodeData } from "../../protocol/node-store";
 import { formatNodeId } from "../../utils/hex";
+import { stringWidth, truncateVisual, padEndVisual } from "../../utils/string-width";
 import { Mesh } from "@meshtastic/protobufs";
-
-// Calculate visual width of string (emojis = 2, most chars = 1)
-function stringWidth(str: string): number {
-  let width = 0;
-  for (const char of str) {
-    const code = char.codePointAt(0) || 0;
-    // Emoji and wide characters take 2 spaces
-    // Covers: Misc Technical (23xx), Enclosed Alphanumerics (24xx), Geometric (25xx),
-    // Misc Symbols (26xx), Dingbats (27xx), Misc Symbols (2Bxx), and SMP emojis (1Fxxx)
-    if (
-      code > 0x1F000 ||
-      (code >= 0x2300 && code <= 0x23FF) ||
-      (code >= 0x2460 && code <= 0x24FF) ||
-      (code >= 0x25A0 && code <= 0x25FF) ||
-      (code >= 0x2600 && code <= 0x27BF) ||
-      (code >= 0x2B00 && code <= 0x2BFF) ||
-      (code >= 0x3000 && code <= 0x303F)
-    ) {
-      width += 2;
-    } else {
-      width += 1;
-    }
-  }
-  return width;
-}
-
-// Pad string to target visual width
-function padEndVisual(str: string, targetWidth: number): string {
-  const currentWidth = stringWidth(str);
-  if (currentWidth >= targetWidth) return str;
-  return str + " ".repeat(targetWidth - currentWidth);
-}
 
 type NodeSortKey = "hops" | "snr" | "battery" | "time" | "favorites";
 
@@ -173,19 +142,7 @@ function NodeRow({ node, isSelected }: NodeRowProps) {
 
   const nameColor = node.hopsAway === 0 ? theme.fg.accent : theme.fg.primary;
 
-  // Truncate name to ~6 visual chars
-  let displayName = name;
-  if (stringWidth(name) > 6) {
-    let truncated = "";
-    let w = 0;
-    for (const char of name) {
-      const cw = stringWidth(char);
-      if (w + cw > 6) break;
-      truncated += char;
-      w += cw;
-    }
-    displayName = truncated;
-  }
+  const displayName = truncateVisual(name, 6);
 
   const favStar = node.isFavorite ? "★" : " ";
   const hwModel = node.hwModel !== undefined
