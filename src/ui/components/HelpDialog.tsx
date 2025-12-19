@@ -6,6 +6,7 @@ type AppMode = "packets" | "nodes" | "chat" | "dm" | "config" | "log";
 
 interface HelpDialogProps {
   mode: AppMode;
+  meshViewUrl?: string;
 }
 
 const globalKeys = [
@@ -107,13 +108,16 @@ const logKeys = [
   { key: "k / ↑", desc: "Previous response" },
 ];
 
-export function HelpDialog({ mode }: HelpDialogProps) {
+export function HelpDialog({ mode, meshViewUrl }: HelpDialogProps) {
   const modeKeys = mode === "packets" ? packetKeys
     : mode === "nodes" ? nodeKeys
     : mode === "chat" ? chatKeys
     : mode === "dm" ? dmKeys
     : mode === "config" ? configKeys
     : logKeys;
+
+  // Check if a shortcut is MeshView-related
+  const isMeshViewKey = (desc: string) => desc.toLowerCase().includes("meshview");
 
   const modeTitle = mode === "packets" ? "PACKETS"
     : mode === "nodes" ? "NODES"
@@ -148,12 +152,16 @@ export function HelpDialog({ mode }: HelpDialogProps) {
       <Box marginY={1}>
         <Text bold color={theme.data.channel}>{modeTitle} MODE</Text>
       </Box>
-      {modeKeys.map(({ key, desc }) => (
-        <Box key={key}>
-          <Text color={theme.data.nodeFrom}>{key.padEnd(12)}</Text>
-          <Text color={theme.fg.primary}>{desc}</Text>
-        </Box>
-      ))}
+      {modeKeys.map(({ key, desc }) => {
+        const disabled = isMeshViewKey(desc) && !meshViewUrl;
+        return (
+          <Box key={key}>
+            <Text color={disabled ? theme.fg.muted : theme.data.nodeFrom}>{key.padEnd(12)}</Text>
+            <Text color={disabled ? theme.fg.muted : theme.fg.primary}>{desc}</Text>
+            {disabled && <Text color={theme.fg.muted}> (disabled)</Text>}
+          </Box>
+        );
+      })}
 
       <Box marginTop={1} justifyContent="center">
         <Text color={theme.fg.muted}>Press ? to close</Text>

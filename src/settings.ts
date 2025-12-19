@@ -42,4 +42,3 @@ export function setSetting<K extends keyof LocalSettings>(key: K, value: LocalSe
   saveSettings(settings);
 }
 
-export const DEFAULT_MESHVIEW_URL = "https://meshview.bayme.sh";

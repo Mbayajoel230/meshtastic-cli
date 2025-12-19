@@ -6,7 +6,7 @@ import { homedir } from "os";
 import { PacketStore, NodeStore } from "./protocol";
 import { App } from "./ui/App";
 import { initDb, clearDb, getDbPath } from "./db";
-import { getSetting, DEFAULT_MESHVIEW_URL } from "./settings";
+import { getSetting } from "./settings";
 
 // Global error handler - append errors to log file
 const ERROR_LOG_DIR = join(homedir(), ".config", "meshtastic-cli");
@@ -100,7 +100,6 @@ Options:
   --skip-nodes       Skip downloading node database on startup (much faster connect)
                      Uses magic nonce 69420 to request config without nodes
   --meshview, -m     MeshView URL for packet/node links (default: from settings or disabled)
-                     Use "default" for ${DEFAULT_MESHVIEW_URL}
   --fahrenheit, -F   Display temperatures in Fahrenheit instead of Celsius
   --help, -h         Show this help message
 `);
@@ -119,14 +118,7 @@ if (clearSession) {
 }
 
 // Resolve meshview URL: CLI flag > settings > undefined
-let resolvedMeshViewUrl: string | undefined;
-if (meshViewUrl === "default") {
-  resolvedMeshViewUrl = DEFAULT_MESHVIEW_URL;
-} else if (meshViewUrl) {
-  resolvedMeshViewUrl = meshViewUrl;
-} else {
-  resolvedMeshViewUrl = getSetting("meshViewUrl");
-}
+const resolvedMeshViewUrl = meshViewUrl || getSetting("meshViewUrl");
 
 // Initialize database
 initDb(session);

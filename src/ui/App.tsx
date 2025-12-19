@@ -2688,7 +2688,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           width="100%"
           height="100%"
         >
-          <HelpDialog mode={mode} />
+          <HelpDialog mode={mode} meshViewUrl={localMeshViewUrl} />
         </Box>
       )}
 

@@ -61,6 +61,9 @@ Note: macOS binaries are not codesigned. You may need to right-click and select 
 ```sh
 docker volume create meshtastic-cli
 docker run --rm -it -e TERM -v meshtastic-cli:/root/.config ghcr.io/statico/meshtastic-cli 192.168.1.100
+
+# With MeshView integration (e.g., Baymesh)
+docker run --rm -it -e TERM -v meshtastic-cli:/root/.config ghcr.io/statico/meshtastic-cli 192.168.1.100 --meshview https://meshview.bayme.sh
 ```
 
 ### Build from Source
