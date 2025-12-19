@@ -842,6 +842,38 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     }
   }, [myNodeNum, transport, nodeStore, showNotification]);
 
+  const sendNodeInfoRequest = useCallback(async (destNode: number) => {
+    if (!transport || !myNodeNum) return;
+
+    const user = create(Mesh.UserSchema, {});
+    const payload = toBinary(Mesh.UserSchema, user);
+
+    const data = create(Mesh.DataSchema, {
+      portnum: Portnums.PortNum.NODEINFO_APP,
+      payload,
+      wantResponse: true,
+    });
+
+    const meshPacket = create(Mesh.MeshPacketSchema, {
+      from: myNodeNum,
+      to: destNode,
+      wantAck: true,
+      payloadVariant: { case: "decoded", value: data },
+    });
+
+    const toRadio = create(Mesh.ToRadioSchema, {
+      payloadVariant: { case: "packet", value: meshPacket },
+    });
+
+    try {
+      const binary = toBinary(Mesh.ToRadioSchema, toRadio);
+      await transport.send(binary);
+      showNotification(`NodeInfo request sent to ${nodeStore.getNodeName(destNode)}`);
+    } catch {
+      showNotification("Failed to send nodeinfo request");
+    }
+  }, [myNodeNum, transport, nodeStore, showNotification]);
+
   const sendTelemetryRequest = useCallback(async (destNode: number) => {
     if (!transport || !myNodeNum) return;
 
@@ -1552,7 +1584,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if (input === "f" && selectedNode) {
         toggleFavoriteNode(selectedNode.num);
       }
-      if (input === "i" && selectedNode && selectedNode.num !== myNodeNum) {
+      // 'i' to request nodeinfo from node
+      if (input === "i" && selectedNode) {
+        sendNodeInfoRequest(selectedNode.num);
+      }
+      // 'I' (shift+i) to toggle ignored
+      if (input === "I" && selectedNode && selectedNode.num !== myNodeNum) {
         toggleIgnoredNode(selectedNode.num);
       }
       // 'u' to update node info from MeshView

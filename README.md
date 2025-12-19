@@ -137,7 +137,8 @@ Options:
 | m | Open position in Maps |
 | l | Lookup hardware model |
 | f | Toggle favorite |
-| i | Toggle ignored |
+| i | Request node info |
+| I | Toggle ignored |
 | x | Remove node from DB |
 
 ### Chat View
