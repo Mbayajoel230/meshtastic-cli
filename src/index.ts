@@ -72,9 +72,9 @@ let useFahrenheit = false;
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
-  if (arg === "--skip-config") {
+  if (arg === "--skip-config" || arg === "-C") {
     skipConfig = true;
-  } else if (arg === "--skip-nodes") {
+  } else if (arg === "--skip-nodes" || arg === "-N") {
     skipNodes = true;
   } else if (arg === "--session" || arg === "-s") {
     session = args[++i] || "default";
@@ -96,9 +96,8 @@ Arguments:
 Options:
   --session, -s      Session name for database (default: default)
   --clear            Clear the database for the session and exit
-  --skip-config      Skip loading device configuration on startup (faster connect)
-  --skip-nodes       Skip downloading node database on startup (much faster connect)
-                     Uses magic nonce 69420 to request config without nodes
+  --skip-config, -C  Skip loading device configuration on startup (faster connect)
+  --skip-nodes, -N   Skip downloading node database on startup (much faster connect)
   --meshview, -m     MeshView URL for packet/node links (default: from settings or disabled)
   --fahrenheit, -F   Display temperatures in Fahrenheit instead of Celsius
   --help, -h         Show this help message
