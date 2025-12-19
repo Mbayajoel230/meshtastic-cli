@@ -93,6 +93,30 @@ Options:
   --help, -h         Show help
 ```
 
+## Message Status Indicators
+
+In Chat and DM views, messages show delivery status:
+
+| Indicator | Meaning |
+|-----------|---------|
+| `[...]` | Pending - waiting for acknowledgment |
+| `[✓]` | Acknowledged - recipient confirmed receipt |
+| `[✗]` | Failed - delivery failed or timed out |
+| `[M]` | MeshView confirmed - packet seen on MeshView server |
+
+The `[M]` indicator also appears in the Packets view when a MeshView URL is configured. This confirms the packet was received by the MeshView aggregation server, which is useful for verifying mesh propagation.
+
+## Terminal Compatibility
+
+For proper emoji and Unicode character display, ensure your terminal uses Unicode-compliant width calculations:
+
+- **Ghostty** - Uses Unicode widths by default (`grapheme-width-method = unicode`)
+- **Kitty** - Uses Unicode widths by default
+- **iTerm2** - Enable in Preferences → Profiles → Text → "Unicode version 9+ widths"
+- **Terminal.app** - May have issues with some emoji
+
+There are still issues with some emoji and fixing them is a work in progress.
+
 ## Keybindings
 
 ### Global
@@ -203,28 +227,6 @@ Options:
 | p | Edit encryption key (PSK) |
 | u | Toggle uplink |
 | D | Toggle downlink |
-
-## Message Status Indicators
-
-In Chat and DM views, messages show delivery status:
-
-| Indicator | Meaning |
-|-----------|---------|
-| `[...]` | Pending - waiting for acknowledgment |
-| `[✓]` | Acknowledged - recipient confirmed receipt |
-| `[✗]` | Failed - delivery failed or timed out |
-| `[M]` | MeshView confirmed - packet seen on MeshView server |
-
-The `[M]` indicator also appears in the Packets view when a MeshView URL is configured. This confirms the packet was received by the MeshView aggregation server, which is useful for verifying mesh propagation.
-
-## Terminal Compatibility
-
-For proper emoji and Unicode character display, ensure your terminal uses Unicode-compliant width calculations:
-
-- **Ghostty** - Uses Unicode widths by default (`grapheme-width-method = unicode`)
-- **Kitty** - Uses Unicode widths by default
-- **iTerm2** - Enable in Preferences → Profiles → Text → "Unicode version 9+ widths"
-- **Terminal.app** - May have issues with some emoji
 
 ## License
 
