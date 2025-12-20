@@ -80,8 +80,12 @@ interface ChatPanelProps {
   replyTo?: DbMessage | null;
 }
 
-// Prefix width: [HH:MM:SS] (10) + space (1) + name (10) + space (1) = 22 chars
-const PREFIX_WIDTH = 22;
+// Column widths
+const TIME_WIDTH = 10;   // [HH:MM:SS]
+const WHO_WIDTH = 10;    // short name
+const ACK_WIDTH = 4;     // [✓] or [✗] or [.] or space
+const SEEN_WIDTH = 4;    // [M] or space
+const PREFIX_WIDTH = TIME_WIDTH + 1 + WHO_WIDTH + 1; // for continuation lines
 
 export function ChatPanel({
   messages,
@@ -119,30 +123,80 @@ export function ChatPanel({
 
   const channelInfo = channels.get(channel);
 
-  // Fixed header height (4 lines for channel selector box, +1 if loraConfig) + input box (3 lines)
+  // Fixed header height (4 lines for channel selector box, +1 if loraConfig) + input box (3 lines) + column header (1)
   const headerHeight = loraConfig ? 5 : 4;
   const inputHeight = 3;
   const emojiHeight = showEmojiSelector ? 3 : 0;
   const replyRowHeight = replyTo ? 1 : 0;
-  const messageAreaHeight = Math.max(1, height - headerHeight - inputHeight - emojiHeight - filterRowHeight - replyRowHeight);
+  const columnHeaderHeight = 1;
+  const messageAreaHeight = Math.max(1, height - headerHeight - inputHeight - emojiHeight - filterRowHeight - replyRowHeight - columnHeaderHeight);
 
-  // Calculate scroll offset to keep selected message visible
+  // Calculate available width for message text
+  const msgWidth = Math.max(20, width - PREFIX_WIDTH - ACK_WIDTH - SEEN_WIDTH - 4);
+
+  // Calculate how many lines each message needs (for scroll calculation)
+  const getMessageLineCount = (msg: typeof filteredMessages[0]): number => {
+    const hasReply = msg.replyId && filteredMessages.some(m => m.packetId === msg.replyId);
+    const cleanText = msg.text.replace(/[\r\x00-\x1f]/g, "");
+    const textLines = Math.ceil(cleanText.length / msgWidth) || 1;
+    return (hasReply ? 1 : 0) + textLines;
+  };
+
+  // Calculate scroll offset accounting for multi-line messages
   let scrollOffset = 0;
-  if (filteredMessages.length > messageAreaHeight) {
+  let visibleMessages: typeof filteredMessages = [];
+
+  if (filteredMessages.length > 0) {
     if (selectedMessageIndex < 0) {
-      // No selection - show most recent messages
-      scrollOffset = filteredMessages.length - messageAreaHeight;
+      // No selection - show most recent messages that fit
+      let totalLines = 0;
+      let startIdx = filteredMessages.length;
+      for (let i = filteredMessages.length - 1; i >= 0 && totalLines < messageAreaHeight; i--) {
+        const lines = getMessageLineCount(filteredMessages[i]);
+        if (totalLines + lines <= messageAreaHeight) {
+          totalLines += lines;
+          startIdx = i;
+        } else {
+          break;
+        }
+      }
+      scrollOffset = startIdx;
+      visibleMessages = filteredMessages.slice(startIdx);
     } else {
-      // Center the selected message in the view
+      // Try to center selected message
+      let totalLinesBefore = 0;
+      for (let i = 0; i < selectedMessageIndex; i++) {
+        totalLinesBefore += getMessageLineCount(filteredMessages[i]);
+      }
+
       const halfView = Math.floor(messageAreaHeight / 2);
-      scrollOffset = Math.max(0, Math.min(
-        selectedMessageIndex - halfView,
-        filteredMessages.length - messageAreaHeight
-      ));
+      let targetOffset = 0;
+      let linesSoFar = 0;
+
+      // Find offset that puts selection roughly in middle
+      for (let i = 0; i < filteredMessages.length; i++) {
+        if (linesSoFar >= totalLinesBefore - halfView) {
+          targetOffset = i;
+          break;
+        }
+        linesSoFar += getMessageLineCount(filteredMessages[i]);
+      }
+
+      scrollOffset = Math.max(0, targetOffset);
+
+      // Collect visible messages that fit
+      let totalLines = 0;
+      for (let i = scrollOffset; i < filteredMessages.length && totalLines < messageAreaHeight; i++) {
+        const lines = getMessageLineCount(filteredMessages[i]);
+        if (totalLines + lines <= messageAreaHeight) {
+          visibleMessages.push(filteredMessages[i]);
+          totalLines += lines;
+        } else {
+          break;
+        }
+      }
     }
   }
-
-  const visibleMessages = filteredMessages.slice(scrollOffset, scrollOffset + messageAreaHeight);
 
   const getRoleName = (role: number) => {
     return Channel.Channel_Role[role] || `ROLE_${role}`;
@@ -221,6 +275,16 @@ export function ChatPanel({
         </Box>
       )}
 
+      {/* Column headers */}
+      <Box paddingX={1}>
+        <Text color={theme.fg.muted}>{"TIME".padEnd(TIME_WIDTH)} </Text>
+        <Text color={theme.fg.muted}>{"WHO".padEnd(WHO_WIDTH)} </Text>
+        <Text color={theme.fg.muted}>MESSAGE</Text>
+        <Box flexGrow={1} />
+        <Text color={theme.fg.muted}>ACK </Text>
+        <Text color={theme.fg.muted}>SEEN</Text>
+      </Box>
+
       {/* Messages */}
       <Box flexDirection="column" flexGrow={1} flexShrink={1} paddingX={1} overflowY="hidden">
         {filteredMessages.length === 0 ? (
@@ -239,9 +303,9 @@ export function ChatPanel({
                 nodeStore={nodeStore}
                 isOwn={msg.fromNode === myNodeNum}
                 isSelected={actualIndex === selectedMessageIndex && !inputFocused}
-                width={width}
+                msgWidth={msgWidth}
                 meshViewConfirmedIds={meshViewConfirmedIds}
-                allMessages={messages}
+                allMessages={filteredMessages}
               />
             );
           })
@@ -289,68 +353,23 @@ interface MessageRowProps {
   nodeStore: NodeStore;
   isOwn: boolean;
   isSelected: boolean;
-  width: number;
+  msgWidth: number;
   meshViewConfirmedIds?: Set<number>;
   allMessages: DbMessage[];
 }
 
-function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConfirmedIds, allMessages }: MessageRowProps) {
+function MessageRow({ message, nodeStore, isOwn, isSelected, msgWidth, meshViewConfirmedIds, allMessages }: MessageRowProps) {
   const fromName = nodeStore.getNodeName(message.fromNode);
   const time = new Date(message.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
   const nameColor = isOwn ? theme.fg.accent : theme.packet.position;
   const [now, setNow] = useState(Date.now());
-  const isConfirmedByMeshView = message.packetId && meshViewConfirmedIds?.has(message.packetId);
+  const isConfirmedByMeshView = message.packetId && (meshViewConfirmedIds?.has(message.packetId) || message.seenOnMesh);
 
   useEffect(() => {
     if (message.status !== "pending" || !isOwn) return;
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, [message.status, isOwn]);
-
-  const getStatusIndicator = () => {
-    if (!isOwn) return null;
-    switch (message.status) {
-      case "pending": {
-        const elapsed = now - message.timestamp * 1000;
-        if (elapsed > MESSAGE_TIMEOUT_MS) {
-          return (
-            <Text>
-              {" "}<Text color={theme.fg.muted}>[</Text>
-              <Text color={theme.status.offline}>✗</Text>
-              <Text color={theme.fg.muted}>]</Text>
-            </Text>
-          );
-        }
-        return <AnimatedDots />;
-      }
-      case "acked":
-        return (
-          <Text>
-            {" "}<Text color={theme.fg.muted}>[</Text>
-            <Text color={theme.status.online}>✓</Text>
-            <Text color={theme.fg.muted}>]</Text>
-          </Text>
-        );
-      case "error":
-        return (
-          <Text>
-            {" "}<Text color={theme.fg.muted}>[</Text>
-            <Text color={theme.status.offline}>✗</Text>
-            <Text color={theme.fg.muted}>]</Text>
-          </Text>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const getMeshViewIndicator = () => {
-    if (!isConfirmedByMeshView) return null;
-    return <Text color={theme.fg.muted}> [M]</Text>;
-  };
-
-  // Calculate available width for message text (width - prefix - padding - status indicator space)
-  const textWidth = Math.max(20, width - PREFIX_WIDTH - 4 - 6);
 
   // Wrap text to fit within available width
   const wrapText = (text: string, maxWidth: number): string[] => {
@@ -361,7 +380,6 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
       } else {
         let remaining = line;
         while (remaining.length > maxWidth) {
-          // Try to break at space
           let breakPoint = remaining.lastIndexOf(" ", maxWidth);
           if (breakPoint <= 0) breakPoint = maxWidth;
           result.push(remaining.slice(0, breakPoint));
@@ -373,9 +391,9 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
     return result;
   };
 
-  // Remove carriage returns and other control characters that break terminal display
+  // Remove carriage returns and other control characters
   const cleanText = message.text.replace(/[\r\x00-\x1f]/g, "");
-  const lines = wrapText(cleanText, textWidth);
+  const lines = wrapText(cleanText, msgWidth);
   const continuationPadding = " ".repeat(PREFIX_WIDTH);
 
   // Find the message being replied to
@@ -386,33 +404,87 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
     ? repliedMessage.text.slice(0, 25) + (repliedMessage.text.length > 25 ? "..." : "")
     : null;
 
+  // ACK column content (for own messages only)
+  const getAckColumn = (isLastLine: boolean) => {
+    if (!isLastLine) return <Text>{"    "}</Text>;
+    if (!isOwn) return <Text>{"    "}</Text>;
+    switch (message.status) {
+      case "pending": {
+        const elapsed = now - message.timestamp * 1000;
+        if (elapsed > MESSAGE_TIMEOUT_MS) {
+          return <Text><Text color={theme.fg.muted}>[</Text><Text color={theme.status.offline}>✗</Text><Text color={theme.fg.muted}>]</Text> </Text>;
+        }
+        return <AnimatedDotsCompact />;
+      }
+      case "acked":
+        return <Text><Text color={theme.fg.muted}>[</Text><Text color={theme.status.online}>✓</Text><Text color={theme.fg.muted}>]</Text> </Text>;
+      case "error":
+        return <Text><Text color={theme.fg.muted}>[</Text><Text color={theme.status.offline}>✗</Text><Text color={theme.fg.muted}>]</Text> </Text>;
+      default:
+        return <Text>{"    "}</Text>;
+    }
+  };
+
+  // SEEN column content
+  const getSeenColumn = (isLastLine: boolean) => {
+    if (!isLastLine) return <Text>{"    "}</Text>;
+    if (!isConfirmedByMeshView) return <Text>{"    "}</Text>;
+    return <Text color={theme.fg.muted}>[M] </Text>;
+  };
+
   return (
     <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
       {repliedMessage && (
         <Box>
           <Text color={theme.fg.muted}>
-            {continuationPadding}┌ replying to{" "}
+            {continuationPadding}╭ replying to{" "}
           </Text>
           <Text color={theme.fg.secondary}>{nodeStore.getNodeName(repliedMessage.fromNode)}</Text>
           <Text color={theme.fg.muted}>: "{replyPreview}"</Text>
         </Box>
       )}
-      {lines.map((line, lineIndex) => (
-        <Box key={lineIndex}>
-          {lineIndex === 0 ? (
-            <Text>
-              <Text color={theme.fg.muted}>[{time}] </Text>
-              <Text color={nameColor}>{fitVisual(fromName, 10)}</Text>
-              <Text> </Text>
-            </Text>
-          ) : (
-            <Text>{continuationPadding}</Text>
-          )}
-          <Text color={theme.fg.primary}>{line}</Text>
-          {lineIndex === lines.length - 1 && getStatusIndicator()}
-          {lineIndex === lines.length - 1 && getMeshViewIndicator()}
-        </Box>
-      ))}
+      {lines.map((line, lineIndex) => {
+        const isLastLine = lineIndex === lines.length - 1;
+        return (
+          <Box key={lineIndex}>
+            {lineIndex === 0 ? (
+              <Text>
+                <Text color={theme.fg.muted}>[{time}] </Text>
+                <Text color={nameColor}>{fitVisual(fromName, WHO_WIDTH)}</Text>
+                <Text> </Text>
+              </Text>
+            ) : (
+              <Text>{continuationPadding}</Text>
+            )}
+            <Text color={theme.fg.primary}>{line}</Text>
+            <Box flexGrow={1} />
+            {getAckColumn(isLastLine)}
+            {getSeenColumn(isLastLine)}
+          </Box>
+        );
+      })}
     </Box>
+  );
+}
+
+function AnimatedDotsCompact() {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((f) => (f + 1) % 3);
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Text>
+      <Text color={theme.fg.muted}>[</Text>
+      <Text color={frame === 0 ? theme.fg.primary : theme.fg.muted}>.</Text>
+      <Text color={frame === 1 ? theme.fg.primary : theme.fg.muted}>.</Text>
+      <Text color={frame === 2 ? theme.fg.primary : theme.fg.muted}>.</Text>
+      <Text color={theme.fg.muted}>]</Text>
+      <Text> </Text>
+    </Text>
   );
 }

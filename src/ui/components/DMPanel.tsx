@@ -233,7 +233,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshView
   const time = new Date(message.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
   const nameColor = isOwn ? theme.fg.accent : theme.packet.position;
   const [now, setNow] = useState(Date.now());
-  const isConfirmedByMeshView = message.packetId && meshViewConfirmedIds?.has(message.packetId);
+  const isConfirmedByMeshView = message.packetId && (meshViewConfirmedIds?.has(message.packetId) || message.seenOnMesh);
 
   useEffect(() => {
     if (message.status !== "pending" || !isOwn) return;
@@ -302,7 +302,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshView
     <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
       {repliedMessage && (
         <Text color={theme.fg.muted}>
-          {"            "}┌ replying to{" "}
+          {"            "}╭ replying to{" "}
           <Text color={theme.fg.secondary}>{nodeStore.getNodeName(repliedMessage.fromNode)}</Text>
           : "{replyPreview}"
         </Text>
