@@ -180,6 +180,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
   const [chatChannel, setChatChannel] = useState(0);
   const [chatInputFocused, setChatInputFocused] = useState(false);
   const [selectedChatMessageIndex, setSelectedChatMessageIndex] = useState(-1);
+  const [chatReplyTo, setChatReplyTo] = useState<db.DbMessage | null>(null);
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
   const [emojiSelectorIndex, setEmojiSelectorIndex] = useState(0);
   const [channels, setChannels] = useState<Map<number, ChannelInfo>>(new Map());
@@ -193,6 +194,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
   const [dmInputFocused, setDmInputFocused] = useState(false);
   const [dmInput, setDmInput] = useState("");
   const [dmDeleteConfirm, setDmDeleteConfirm] = useState(false);
+  const [dmReplyTo, setDmReplyTo] = useState<db.DbMessage | null>(null);
 
   // Config state
   const [configSection, setConfigSection] = useState<ConfigSection>("menu");
@@ -433,6 +435,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           hopLimit: mp.hopLimit,
           hopStart: mp.hopStart,
           status: "received",
+          replyId: packet.replyId,
         };
         db.insertMessage(msg);
 
@@ -788,13 +791,14 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     setTimeout(() => setNotification(null), 2000);
   }, []);
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, replyId?: number) => {
     if (!transport || !myNodeNum || !text.trim()) return;
 
     const packetId = Math.floor(Math.random() * 0xffffffff);
     const data = create(Mesh.DataSchema, {
       portnum: Portnums.PortNum.TEXT_MESSAGE_APP,
       payload: new TextEncoder().encode(text),
+      replyId: replyId ?? 0,
     });
 
     const meshPacket = create(Mesh.MeshPacketSchema, {
@@ -822,10 +826,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         text,
         timestamp: Math.floor(Date.now() / 1000),
         status: "pending",
+        replyId,
       };
       db.insertMessage(msg);
       setMessages((prev) => [...prev, msg].slice(-100));
       setChatInput("");
+      setChatReplyTo(null);
     } catch {
       showNotification("Failed to send message");
     }
@@ -838,6 +844,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     const data = create(Mesh.DataSchema, {
       portnum: Portnums.PortNum.TEXT_MESSAGE_APP,
       payload: new TextEncoder().encode(msg.text),
+      replyId: msg.replyId ?? 0,
     });
 
     const meshPacket = create(Mesh.MeshPacketSchema, {
@@ -857,11 +864,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       const binary = toBinary(Mesh.ToRadioSchema, toRadio);
       await transport.send(binary);
 
-      // Update the original message status to pending with new packet ID
-      if (msg.id) {
-        db.updateMessageStatus(msg.id, "pending");
-      }
-      // Add new message entry for the resend
+      // Add new message entry for the resend (old message stays with error status)
       const newMsg: db.DbMessage = {
         packetId,
         fromNode: myNodeNum,
@@ -870,6 +873,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         text: msg.text,
         timestamp: Math.floor(Date.now() / 1000),
         status: "pending",
+        replyId: msg.replyId,
       };
       db.insertMessage(newMsg);
       setMessages((prev) => [...prev, newMsg].slice(-100));
@@ -879,7 +883,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     }
   }, [myNodeNum, transport, showNotification]);
 
-  const sendDM = useCallback(async (text: string, toNode: number) => {
+  const sendDM = useCallback(async (text: string, toNode: number, replyId?: number) => {
     if (!transport) {
       showNotification("Not connected");
       return;
@@ -894,6 +898,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     const data = create(Mesh.DataSchema, {
       portnum: Portnums.PortNum.TEXT_MESSAGE_APP,
       payload: new TextEncoder().encode(text),
+      replyId: replyId ?? 0,
     });
 
     const meshPacket = create(Mesh.MeshPacketSchema, {
@@ -921,10 +926,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         text,
         timestamp: Math.floor(Date.now() / 1000),
         status: "pending",
+        replyId,
       };
       db.insertMessage(msg);
       setMessages((prev) => [...prev, msg].slice(-100));
       setDmInput("");
+      setDmReplyTo(null);
 
       // Refresh DM conversations and keep selection on same conversation
       const newConvos = db.getDMConversations(myNodeNum);
@@ -1941,11 +1948,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         if (key.escape) {
           setChatInputFocused(false);
           setSelectedChatMessageIndex(-1); // Clear selection when blurring
+          setChatReplyTo(null); // Clear reply when blurring
           return;
         }
         if (key.return) {
           if (chatInput.trim()) {
-            sendMessage(chatInput);
+            sendMessage(chatInput, chatReplyTo?.packetId);
             setChatInputFocused(false);
           }
           return;
@@ -2089,6 +2097,15 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           }
           return;
         }
+        // 'r' to reply to selected message
+        if (input === "r") {
+          const selectedMsg = filteredMessages[selectedChatMessageIndex];
+          if (selectedMsg) {
+            setChatReplyTo(selectedMsg);
+            setChatInputFocused(true);
+          }
+          return;
+        }
         // Enter to focus input
         if (key.return) {
           setChatInputFocused(true);
@@ -2127,10 +2144,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if (dmInputFocused) {
         if (key.escape) {
           setDmInputFocused(false);
+          setDmReplyTo(null); // Clear reply when blurring
           return;
         }
         if (key.return && dmInput.trim() && selectedConvo) {
-          sendDM(dmInput, selectedConvo.nodeNum);
+          sendDM(dmInput, selectedConvo.nodeNum, dmReplyTo?.packetId);
           return;
         }
         if (key.backspace || key.delete) {
@@ -2200,6 +2218,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
           if (msg.fromNode === myNodeNum && msg.status === "error") {
             resendMessage(msg);
           }
+          return;
+        }
+        // 'r' to reply to selected message
+        if (input === "r" && dmMessages[selectedDMMessageIndex]) {
+          const msg = dmMessages[selectedDMMessageIndex];
+          setDmReplyTo(msg);
+          setDmInputFocused(true);
           return;
         }
         // 'u' to update sender node from MeshView
@@ -2825,6 +2850,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
               filter={chatFilter}
               filterInputActive={chatFilterInput}
               meshViewConfirmedIds={meshViewConfirmedIds}
+              replyTo={chatReplyTo}
             />
           </Box>
         )}
@@ -2846,6 +2872,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
                 width={terminalWidth}
                 deleteConfirm={dmDeleteConfirm}
                 meshViewConfirmedIds={meshViewConfirmedIds}
+                replyTo={dmReplyTo}
               />
             </Box>
           );

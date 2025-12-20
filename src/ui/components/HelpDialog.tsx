@@ -64,12 +64,13 @@ const chatKeys = [
   { key: "g / G", desc: "First / Last message" },
   { key: "/", desc: "Filter messages" },
   { key: "Tab/S-Tab", desc: "Next/Prev channel" },
+  { key: "r", desc: "Reply to message" },
+  { key: "R", desc: "Resend failed message" },
   { key: "n", desc: "Go to sender node" },
   { key: "d", desc: "DM the sender" },
   { key: "u", desc: "Update node from MeshView" },
-  { key: "R", desc: "Resend failed message" },
   { key: "Enter", desc: "Focus input" },
-  { key: "Escape", desc: "Unfocus / Exit chat" },
+  { key: "Escape", desc: "Unfocus / Clear reply" },
   { key: "Alt+E", desc: "Emoji selector (in input)" },
 ];
 
@@ -79,12 +80,13 @@ const dmKeys = [
   { key: "l / →", desc: "Enter message selection" },
   { key: "h / ←", desc: "Back to conversations" },
   { key: "g / G", desc: "First / Last" },
+  { key: "r", desc: "Reply to message" },
+  { key: "R", desc: "Resend failed message" },
   { key: "n", desc: "Go to node" },
   { key: "u", desc: "Update node from MeshView" },
-  { key: "R", desc: "Resend failed message" },
   { key: "#", desc: "Delete conversation" },
   { key: "Enter", desc: "Focus input" },
-  { key: "Escape", desc: "Back / Unfocus" },
+  { key: "Escape", desc: "Back / Clear reply" },
 ];
 
 const configKeys = [

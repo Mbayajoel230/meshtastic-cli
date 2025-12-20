@@ -43,6 +43,7 @@ interface DMPanelProps {
   width: number;
   deleteConfirm?: boolean;
   meshViewConfirmedIds?: Set<number>;
+  replyTo?: DbMessage | null;
 }
 
 // Left panel width: star(1) + space(1) + name(6) + space(1) + id(9) = 18
@@ -61,6 +62,7 @@ export function DMPanel({
   width,
   deleteConfirm,
   meshViewConfirmedIds,
+  replyTo,
 }: DMPanelProps) {
   const selectedConvo = conversations[selectedConvoIndex];
   const listFocused = selectedMessageIndex < 0 && !inputFocused && !deleteConfirm;
@@ -79,7 +81,8 @@ export function DMPanel({
 
   // Right panel dimensions
   const rightPanelWidth = width - LEFT_PANEL_WIDTH - 3; // 3 for borders/padding
-  const chatHeight = height - 7; // 3-line header + separator + input area
+  const replyRowHeight = replyTo ? 1 : 0;
+  const chatHeight = height - 7 - replyRowHeight; // 3-line header + separator + input area + optional reply
 
   // Calculate scroll offset for messages
   const visibleMsgCount = chatHeight;
@@ -174,11 +177,21 @@ export function DMPanel({
                   isSelected={actualIndex === selectedMessageIndex && !inputFocused}
                   textWidth={rightPanelWidth - 25}
                   meshViewConfirmedIds={meshViewConfirmedIds}
+                  allMessages={messages}
                 />
               );
             })
           )}
         </Box>
+
+        {/* Reply indicator */}
+        {replyTo && (
+          <Box paddingX={1}>
+            <Text color={theme.fg.muted}>replying to </Text>
+            <Text color={theme.fg.accent}>{nodeStore.getNodeName(replyTo.fromNode)}</Text>
+            <Text color={theme.fg.muted}>: "{replyTo.text.length > 30 ? replyTo.text.slice(0, 30) + "..." : replyTo.text}"</Text>
+          </Box>
+        )}
 
         {/* Input */}
         <Box
@@ -212,9 +225,10 @@ interface MessageRowProps {
   isSelected: boolean;
   textWidth: number;
   meshViewConfirmedIds?: Set<number>;
+  allMessages: DbMessage[];
 }
 
-function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshViewConfirmedIds }: MessageRowProps) {
+function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshViewConfirmedIds, allMessages }: MessageRowProps) {
   const fromName = nodeStore.getNodeName(message.fromNode);
   const time = new Date(message.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
   const nameColor = isOwn ? theme.fg.accent : theme.packet.position;
@@ -276,8 +290,23 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshView
     ? cleanText.slice(0, maxLen - 3) + "..."
     : cleanText;
 
+  // Find the message being replied to
+  const repliedMessage = message.replyId
+    ? allMessages.find(m => m.packetId === message.replyId)
+    : null;
+  const replyPreview = repliedMessage
+    ? repliedMessage.text.slice(0, 20) + (repliedMessage.text.length > 20 ? "..." : "")
+    : null;
+
   return (
-    <Box backgroundColor={isSelected ? theme.bg.selected : undefined}>
+    <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
+      {repliedMessage && (
+        <Text color={theme.fg.muted}>
+          {"            "}┌ replying to{" "}
+          <Text color={theme.fg.secondary}>{nodeStore.getNodeName(repliedMessage.fromNode)}</Text>
+          : "{replyPreview}"
+        </Text>
+      )}
       <Text wrap="truncate">
         <Text color={theme.fg.muted}>[{time}] </Text>
         <Text color={nameColor}>{fitVisual(fromName, 8)} </Text>

@@ -10,6 +10,7 @@ export interface DecodedPacket {
   portnum?: Portnums.PortNum;
   payload?: unknown;
   requestId?: number;
+  replyId?: number;
   decodeError?: string;
 }
 
@@ -32,6 +33,9 @@ export function decodeFromRadio(raw: Uint8Array): DecodedPacket {
         packet.payload = decodePayload(decoded.portnum, decoded.payload);
         if (decoded.requestId) {
           packet.requestId = decoded.requestId;
+        }
+        if (decoded.replyId) {
+          packet.replyId = decoded.replyId;
         }
       }
     }

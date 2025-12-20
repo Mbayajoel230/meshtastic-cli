@@ -77,6 +77,7 @@ interface ChatPanelProps {
   filter?: string;
   filterInputActive?: boolean;
   meshViewConfirmedIds?: Set<number>;
+  replyTo?: DbMessage | null;
 }
 
 // Prefix width: [HH:MM:SS] (10) + space (1) + name (10) + space (1) = 22 chars
@@ -99,6 +100,7 @@ export function ChatPanel({
   filter,
   filterInputActive,
   meshViewConfirmedIds,
+  replyTo,
 }: ChatPanelProps) {
   const hasFilter = filter && filter.length > 0;
   const filterRowHeight = (hasFilter || filterInputActive) ? 1 : 0;
@@ -121,7 +123,8 @@ export function ChatPanel({
   const headerHeight = loraConfig ? 5 : 4;
   const inputHeight = 3;
   const emojiHeight = showEmojiSelector ? 3 : 0;
-  const messageAreaHeight = Math.max(1, height - headerHeight - inputHeight - emojiHeight - filterRowHeight);
+  const replyRowHeight = replyTo ? 1 : 0;
+  const messageAreaHeight = Math.max(1, height - headerHeight - inputHeight - emojiHeight - filterRowHeight - replyRowHeight);
 
   // Calculate scroll offset to keep selected message visible
   let scrollOffset = 0;
@@ -238,6 +241,7 @@ export function ChatPanel({
                 isSelected={actualIndex === selectedMessageIndex && !inputFocused}
                 width={width}
                 meshViewConfirmedIds={meshViewConfirmedIds}
+                allMessages={messages}
               />
             );
           })
@@ -254,6 +258,15 @@ export function ChatPanel({
             </Text>
           ))}
           <Text color={theme.fg.muted}> (←→ select, Enter insert, Esc cancel)</Text>
+        </Box>
+      )}
+
+      {/* Reply indicator */}
+      {replyTo && (
+        <Box paddingX={1}>
+          <Text color={theme.fg.muted}>replying to </Text>
+          <Text color={theme.fg.accent}>{nodeStore.getNodeName(replyTo.fromNode)}</Text>
+          <Text color={theme.fg.muted}>: "{replyTo.text.length > 30 ? replyTo.text.slice(0, 30) + "..." : replyTo.text}"</Text>
         </Box>
       )}
 
@@ -278,9 +291,10 @@ interface MessageRowProps {
   isSelected: boolean;
   width: number;
   meshViewConfirmedIds?: Set<number>;
+  allMessages: DbMessage[];
 }
 
-function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConfirmedIds }: MessageRowProps) {
+function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConfirmedIds, allMessages }: MessageRowProps) {
   const fromName = nodeStore.getNodeName(message.fromNode);
   const time = new Date(message.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
   const nameColor = isOwn ? theme.fg.accent : theme.packet.position;
@@ -364,8 +378,25 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
   const lines = wrapText(cleanText, textWidth);
   const continuationPadding = " ".repeat(PREFIX_WIDTH);
 
+  // Find the message being replied to
+  const repliedMessage = message.replyId
+    ? allMessages.find(m => m.packetId === message.replyId)
+    : null;
+  const replyPreview = repliedMessage
+    ? repliedMessage.text.slice(0, 25) + (repliedMessage.text.length > 25 ? "..." : "")
+    : null;
+
   return (
     <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
+      {repliedMessage && (
+        <Box>
+          <Text color={theme.fg.muted}>
+            {continuationPadding}┌ replying to{" "}
+          </Text>
+          <Text color={theme.fg.secondary}>{nodeStore.getNodeName(repliedMessage.fromNode)}</Text>
+          <Text color={theme.fg.muted}>: "{replyPreview}"</Text>
+        </Box>
+      )}
       {lines.map((line, lineIndex) => (
         <Box key={lineIndex}>
           {lineIndex === 0 ? (

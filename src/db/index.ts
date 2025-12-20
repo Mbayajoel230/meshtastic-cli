@@ -91,6 +91,13 @@ export function initDb(session: string = "default") {
     // Column already exists
   }
 
+  // Migration: add reply_id column if it doesn't exist
+  try {
+    db.run(`ALTER TABLE messages ADD COLUMN reply_id INTEGER`);
+  } catch {
+    // Column already exists
+  }
+
   db.run(`
     CREATE TABLE IF NOT EXISTS packets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -216,6 +223,7 @@ export interface DbMessage {
   hopLimit?: number;
   hopStart?: number;
   status?: MessageStatus;
+  replyId?: number;
 }
 
 export function upsertNode(node: DbNode) {
@@ -337,8 +345,8 @@ export function deleteNode(num: number) {
 
 export function insertMessage(msg: DbMessage) {
   db.run(`
-    INSERT INTO messages (packet_id, from_node, to_node, channel, text, timestamp, rx_time, rx_snr, rx_rssi, hop_limit, hop_start, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO messages (packet_id, from_node, to_node, channel, text, timestamp, rx_time, rx_snr, rx_rssi, hop_limit, hop_start, status, reply_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     msg.packetId,
     msg.fromNode,
@@ -352,6 +360,7 @@ export function insertMessage(msg: DbMessage) {
     msg.hopLimit ?? null,
     msg.hopStart ?? null,
     msg.status ?? "received",
+    msg.replyId ?? null,
   ]);
 }
 
@@ -379,7 +388,29 @@ export function getMessages(channel?: number, limit = 100): DbMessage[] {
     hopLimit: row.hop_limit,
     hopStart: row.hop_start,
     status: row.status as MessageStatus,
+    replyId: row.reply_id ?? undefined,
   }));
+}
+
+export function getMessageByPacketId(packetId: number): DbMessage | null {
+  const row = db.query(`SELECT * FROM messages WHERE packet_id = ?`).get(packetId) as any;
+  if (!row) return null;
+  return {
+    id: row.id,
+    packetId: row.packet_id,
+    fromNode: row.from_node,
+    toNode: row.to_node,
+    channel: row.channel,
+    text: row.text,
+    timestamp: row.timestamp,
+    rxTime: row.rx_time,
+    rxSnr: row.rx_snr,
+    rxRssi: row.rx_rssi,
+    hopLimit: row.hop_limit,
+    hopStart: row.hop_start,
+    status: row.status as MessageStatus,
+    replyId: row.reply_id ?? undefined,
+  };
 }
 
 export interface DbPacket {
@@ -644,6 +675,7 @@ export function getDMMessages(myNodeNum: number, otherNodeNum: number, limit = 1
     hopLimit: row.hop_limit,
     hopStart: row.hop_start,
     status: row.status as MessageStatus,
+    replyId: row.reply_id ?? undefined,
   }));
 }
 
