@@ -2151,6 +2151,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         }
         if (key.return && dmInput.trim() && selectedConvo) {
           sendDM(dmInput, selectedConvo.nodeNum, dmReplyTo?.packetId);
+          setDmInputFocused(false);
           return;
         }
         if (key.backspace || key.delete) {
