@@ -1404,9 +1404,15 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
   }, [myNodeNum, transport, configOwner, showNotification, batchEditMode, batchEditCount]);
 
   const saveChannel = useCallback(async (channelIndex: number, updates: { name?: string; role?: number; psk?: Uint8Array; uplinkEnabled?: boolean; downlinkEnabled?: boolean }) => {
-    if (!transport || !myNodeNum) return;
+    if (!transport || !myNodeNum) {
+      showNotification("Cannot save: not connected to device");
+      return;
+    }
     const channel = configChannels.find(c => c.index === channelIndex);
-    if (!channel) return;
+    if (!channel) {
+      showNotification(`Cannot save: channel ${channelIndex} not found`);
+      return;
+    }
 
     try {
       const updatedChannel = create(Mesh.ChannelSchema, {
@@ -2375,7 +2381,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
             return;
           }
           if (key.return) {
-            // Save the edit
+            // Save the edit - show notification to confirm we reached here
+            showNotification(`Saving ${configEditing}...`);
             if (configSection === "user" && configOwner) {
               saveOwner(configEditing, configEditValue);
             } else if (configSection === "local" && configEditing === "meshViewUrl") {
