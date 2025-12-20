@@ -79,7 +79,7 @@ export function DMPanel({
 
   // Right panel dimensions
   const rightPanelWidth = width - LEFT_PANEL_WIDTH - 3; // 3 for borders/padding
-  const chatHeight = height - 6; // 2-line header + separator + input area
+  const chatHeight = height - 7; // 3-line header + separator + input area
 
   // Calculate scroll offset for messages
   const visibleMsgCount = chatHeight;
@@ -320,6 +320,15 @@ function formatLastHeard(timestamp?: number): string {
   return `${Math.floor(diff / 86400)}d`;
 }
 
+function formatPublicKeyHex(pk?: Uint8Array): string {
+  if (!pk || pk.length === 0) return "None";
+  const hex = Array.from(pk, b => b.toString(16).padStart(2, "0")).join("");
+  if (hex.length > 32) {
+    return `0x${hex.slice(0, 16)}...${hex.slice(-8)}`;
+  }
+  return `0x${hex}`;
+}
+
 interface NodeInfoHeaderProps {
   nodeNum?: number;
   nodeStore: NodeStore;
@@ -376,6 +385,11 @@ function NodeInfoHeader({ nodeNum, nodeStore, deleteConfirm }: NodeInfoHeaderPro
         <Text color={theme.fg.secondary}>{hops}</Text>
         <Text color={theme.fg.muted}>  HW:</Text>
         <Text color={theme.data.hardware}>{hwModel}</Text>
+      </Box>
+      <Box paddingX={1}>
+        {/* Line 3: Public key */}
+        <Text color={theme.fg.muted}>PubKey: </Text>
+        <Text color={theme.fg.secondary}>{formatPublicKeyHex(node?.publicKey)}</Text>
       </Box>
       {/* Separator */}
       <Box borderStyle="single" borderColor={theme.border.normal} borderTop borderBottom={false} borderLeft={false} borderRight={false} />
