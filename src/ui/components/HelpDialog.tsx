@@ -108,6 +108,8 @@ const configKeys = [
 const logKeys = [
   { key: "j / ↓", desc: "Next response" },
   { key: "k / ↑", desc: "Previous response" },
+  { key: "g / G", desc: "First / Last response" },
+  { key: "n", desc: "Go to node from log message" },
 ];
 
 const meshviewKeys = [

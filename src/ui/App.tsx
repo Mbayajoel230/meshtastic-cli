@@ -1918,6 +1918,17 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if (isLogEnd) {
         setSelectedLogIndex(logResponses.length - 1);
       }
+      // 'n' to go to node from log message
+      if (input === "n") {
+        const selectedResponse = logResponses[selectedLogIndex];
+        if (selectedResponse) {
+          const nodeIndex = nodes.findIndex((n) => n.num === selectedResponse.fromNode);
+          if (nodeIndex >= 0) {
+            setMode("nodes");
+            setSelectedNodeIndex(nodeIndex);
+          }
+        }
+      }
     } else if (mode === "chat") {
       const channelMessages = messages.filter((m) => m.channel === chatChannel);
       const emojiCount = 17; // FIRMWARE_EMOJIS.length
