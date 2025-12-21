@@ -1150,7 +1150,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
 
   const fetchNodeFromMeshView = useCallback(async (nodeNum: number) => {
     if (!localMeshViewUrl) {
-      showNotification("MeshView URL not configured");
+      showNotification("MeshView URL not configured", theme.status.offline);
       return;
     }
 
@@ -1210,7 +1210,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
 
   const updateAllUnknownNodesFromMeshView = useCallback(async () => {
     if (!localMeshViewUrl) {
-      showNotification("MeshView URL not configured");
+      showNotification("MeshView URL not configured", theme.status.offline);
       return;
     }
 
@@ -1717,7 +1717,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         fetchNodeFromMeshView(selectedPacket.meshPacket.from);
       }
       // 'o' to open packet in MeshView
-      if (input === "o" && selectedPacket?.meshPacket?.id && localMeshViewUrl) {
+      if (input === "o" && selectedPacket?.meshPacket?.id) {
+        if (!localMeshViewUrl) {
+          showNotification("MeshView URL not configured", theme.status.offline);
+          return;
+        }
         const packetId = selectedPacket.meshPacket.id;
         if (packetId !== 0) {
           exec(`open "${localMeshViewUrl}/packet/${packetId}"`);
@@ -2683,8 +2687,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
 
       // 'o' to open packet in MeshView web UI
       if (input === "o") {
+        if (!localMeshViewUrl) {
+          showNotification("MeshView URL not configured", theme.status.offline);
+          return;
+        }
         const packet = meshViewPackets[selectedMeshViewIndex];
-        if (packet && localMeshViewUrl) {
+        if (packet) {
           exec(`open "${localMeshViewUrl}/packet/${packet.id}"`);
         }
       }
