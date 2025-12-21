@@ -25,7 +25,7 @@
 </table>
 
 > [!WARNING]
-> This project was completely vibe-coded with [Claude Code](https://claude.com/claude-code) and [Cursor](https://www.cursor.com/). Use at your own risk.
+> This project was completely vibe-coded with [Claude Code](https://claude.com/claude-code) and [Cursor](https://www.cursor.com/).
 
 A terminal UI for monitoring and configuring Meshtastic mesh networks. Connects to a Meshtastic node via HTTP and displays real-time packet traffic, node information, chat messages, and device configuration.
 
