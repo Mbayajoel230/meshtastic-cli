@@ -669,10 +669,9 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         if (data.packets?.length > 0) {
           let hasNewConfirmed = false;
           for (const pkt of data.packets) {
-            // Track confirmed packet IDs and persist to database
+            // Track confirmed packet IDs
             if (!meshViewConfirmedIdsRef.current.has(pkt.id)) {
               meshViewConfirmedIdsRef.current.add(pkt.id);
-              db.markMessageSeenOnMesh(pkt.id);
               hasNewConfirmed = true;
             }
 

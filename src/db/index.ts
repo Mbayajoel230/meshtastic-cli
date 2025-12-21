@@ -98,13 +98,6 @@ export function initDb(session: string = "default") {
     // Column already exists
   }
 
-  // Migration: add seen_on_mesh column if it doesn't exist
-  try {
-    db.run(`ALTER TABLE messages ADD COLUMN seen_on_mesh INTEGER DEFAULT 0`);
-  } catch {
-    // Column already exists
-  }
-
   // Migration: add error_reason column if it doesn't exist
   try {
     db.run(`ALTER TABLE messages ADD COLUMN error_reason TEXT`);
@@ -238,7 +231,6 @@ export interface DbMessage {
   hopStart?: number;
   status?: MessageStatus;
   replyId?: number;
-  seenOnMesh?: boolean;
   errorReason?: string;
 }
 
@@ -361,8 +353,8 @@ export function deleteNode(num: number) {
 
 export function insertMessage(msg: DbMessage) {
   db.run(`
-    INSERT INTO messages (packet_id, from_node, to_node, channel, text, timestamp, rx_time, rx_snr, rx_rssi, hop_limit, hop_start, status, reply_id, seen_on_mesh)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO messages (packet_id, from_node, to_node, channel, text, timestamp, rx_time, rx_snr, rx_rssi, hop_limit, hop_start, status, reply_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     msg.packetId,
     msg.fromNode,
@@ -377,7 +369,6 @@ export function insertMessage(msg: DbMessage) {
     msg.hopStart ?? null,
     msg.status ?? "received",
     msg.replyId ?? null,
-    msg.seenOnMesh ? 1 : 0,
   ]);
 }
 
@@ -387,10 +378,6 @@ export function updateMessageStatus(packetId: number, status: MessageStatus, err
   } else {
     db.run(`UPDATE messages SET status = ? WHERE packet_id = ?`, [status, packetId]);
   }
-}
-
-export function markMessageSeenOnMesh(packetId: number) {
-  db.run(`UPDATE messages SET seen_on_mesh = 1 WHERE packet_id = ?`, [packetId]);
 }
 
 export function getMessages(channel?: number, limit = 100): DbMessage[] {
@@ -414,7 +401,6 @@ export function getMessages(channel?: number, limit = 100): DbMessage[] {
     hopStart: row.hop_start,
     status: row.status as MessageStatus,
     replyId: row.reply_id ?? undefined,
-    seenOnMesh: !!row.seen_on_mesh,
     errorReason: row.error_reason ?? undefined,
   }));
 }
@@ -437,7 +423,6 @@ export function getMessageByPacketId(packetId: number): DbMessage | null {
     hopStart: row.hop_start,
     status: row.status as MessageStatus,
     replyId: row.reply_id ?? undefined,
-    seenOnMesh: !!row.seen_on_mesh,
     errorReason: row.error_reason ?? undefined,
   };
 }
@@ -705,7 +690,6 @@ export function getDMMessages(myNodeNum: number, otherNodeNum: number, limit = 1
     hopStart: row.hop_start,
     status: row.status as MessageStatus,
     replyId: row.reply_id ?? undefined,
-    seenOnMesh: !!row.seen_on_mesh,
     errorReason: row.error_reason ?? undefined,
   }));
 }
