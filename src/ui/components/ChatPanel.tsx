@@ -126,23 +126,88 @@ export function ChatPanel({
   const replyRowHeight = replyTo ? 1 : 0;
   const messageAreaHeight = Math.max(1, height - headerHeight - inputHeight - emojiHeight - filterRowHeight - replyRowHeight);
 
-  // Calculate scroll offset to keep selected message visible
+  // Helper to calculate how many lines a message will take
+  const textWidth = Math.max(20, width - PREFIX_WIDTH - 4 - 6);
+  const getMessageHeight = (msg: DbMessage): number => {
+    const cleanText = msg.text.replace(/[\r\x00-\x1f]/g, "");
+    let lineCount = 0;
+    for (const line of cleanText.split("\n")) {
+      if (line.length <= textWidth) {
+        lineCount++;
+      } else {
+        let remaining = line;
+        while (remaining.length > textWidth) {
+          let breakPoint = remaining.lastIndexOf(" ", textWidth);
+          if (breakPoint <= 0) breakPoint = textWidth;
+          lineCount++;
+          remaining = remaining.slice(breakPoint).trimStart();
+        }
+        if (remaining) lineCount++;
+      }
+    }
+    // Add 1 line if message has a reply indicator
+    if (msg.replyId && messages.find(m => m.packetId === msg.replyId)) {
+      lineCount++;
+    }
+    return lineCount;
+  };
+
+  // Calculate visible messages based on actual line heights
+  const visibleMessages: DbMessage[] = [];
   let scrollOffset = 0;
-  if (filteredMessages.length > messageAreaHeight) {
-    if (selectedMessageIndex < 0) {
-      // No selection - show most recent messages
-      scrollOffset = filteredMessages.length - messageAreaHeight;
-    } else {
-      // Center the selected message in the view
-      const halfView = Math.floor(messageAreaHeight / 2);
-      scrollOffset = Math.max(0, Math.min(
-        selectedMessageIndex - halfView,
-        filteredMessages.length - messageAreaHeight
-      ));
+  let totalLines = 0;
+
+  if (selectedMessageIndex < 0) {
+    // No selection - show most recent messages that fit
+    let linesUsed = 0;
+    for (let i = filteredMessages.length - 1; i >= 0; i--) {
+      const msgHeight = getMessageHeight(filteredMessages[i]);
+      if (linesUsed + msgHeight <= messageAreaHeight) {
+        visibleMessages.unshift(filteredMessages[i]);
+        linesUsed += msgHeight;
+        scrollOffset = i;
+      } else {
+        break;
+      }
+    }
+  } else {
+    // Try to center the selected message
+    scrollOffset = Math.max(0, selectedMessageIndex);
+    let linesUsed = 0;
+
+    // Add selected message first
+    if (scrollOffset < filteredMessages.length) {
+      visibleMessages.push(filteredMessages[scrollOffset]);
+      linesUsed += getMessageHeight(filteredMessages[scrollOffset]);
+    }
+
+    // Add messages before and after alternately to center
+    let before = scrollOffset - 1;
+    let after = scrollOffset + 1;
+    while ((before >= 0 || after < filteredMessages.length) && linesUsed < messageAreaHeight) {
+      if (after < filteredMessages.length) {
+        const msgHeight = getMessageHeight(filteredMessages[after]);
+        if (linesUsed + msgHeight <= messageAreaHeight) {
+          visibleMessages.push(filteredMessages[after]);
+          linesUsed += msgHeight;
+          after++;
+        } else {
+          break;
+        }
+      }
+      if (before >= 0) {
+        const msgHeight = getMessageHeight(filteredMessages[before]);
+        if (linesUsed + msgHeight <= messageAreaHeight) {
+          visibleMessages.unshift(filteredMessages[before]);
+          linesUsed += msgHeight;
+          scrollOffset = before;
+          before--;
+        } else if (after >= filteredMessages.length) {
+          break;
+        }
+      }
     }
   }
-
-  const visibleMessages = filteredMessages.slice(scrollOffset, scrollOffset + messageAreaHeight);
 
   const getRoleName = (role: number) => {
     return Channel.Channel_Role[role] || `ROLE_${role}`;
@@ -231,7 +296,7 @@ export function ChatPanel({
           )
         ) : (
           visibleMessages.map((msg, i) => {
-            const actualIndex = scrollOffset + i;
+            const actualIndex = filteredMessages.indexOf(msg);
             return (
               <MessageRow
                 key={msg.id ?? `${msg.packetId}-${i}`}
@@ -385,14 +450,14 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
 
   // Build reply indicator with proper width constraints
   const replyIndicator = repliedMessage ? (() => {
-    const replyPrefix = `${continuationPadding}┌ replying to `;
-    const replyName = nodeStore.getNodeName(repliedMessage.fromNode);
+    const prefix = "└─ replying to ";
+    const name = nodeStore.getNodeName(repliedMessage.fromNode);
     const quoteSuffix = ': "';
     const quoteEnd = '"';
 
-    // Calculate available width for the preview text
-    const prefixLength = replyPrefix.length + replyName.length + quoteSuffix.length;
-    const availableWidth = textWidth - prefixLength - quoteEnd.length;
+    // Calculate available width for the preview text (accounting for continuation padding)
+    const prefixLength = PREFIX_WIDTH + prefix.length + name.length + quoteSuffix.length;
+    const availableWidth = width - prefixLength - quoteEnd.length - 2; // -2 for padding
 
     // Truncate the preview if needed
     const cleanReplyText = repliedMessage.text.replace(/[\r\n\x00-\x1f]/g, " ");
@@ -402,34 +467,39 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
           : cleanReplyText)
       : "...";
 
-    return { prefix: replyPrefix, name: replyName, preview: replyPreview };
+    return { prefix, name, quoteSuffix, replyPreview, quoteEnd };
   })() : null;
 
   return (
-    <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
+    <Box flexDirection="column">
+      <Box flexDirection="column" backgroundColor={isSelected ? theme.bg.selected : undefined}>
+        {lines.map((line, lineIndex) => (
+          <Box key={lineIndex}>
+            {lineIndex === 0 ? (
+              <Text>
+                <Text color={theme.fg.muted}>[{time}] </Text>
+                <Text color={nameColor}>{fitVisual(fromName, 10)}</Text>
+                <Text> </Text>
+              </Text>
+            ) : (
+              <Text>{continuationPadding}</Text>
+            )}
+            <Text color={theme.fg.primary}>{line}</Text>
+            {lineIndex === lines.length - 1 && getStatusIndicator()}
+            {lineIndex === lines.length - 1 && getMeshViewIndicator()}
+          </Box>
+        ))}
+      </Box>
       {replyIndicator && (
         <Box>
-          <Text color={theme.fg.muted}>{replyIndicator.prefix}</Text>
-          <Text color={theme.fg.secondary}>{replyIndicator.name}</Text>
-          <Text color={theme.fg.muted}>: "{replyIndicator.preview}"</Text>
+          <Text>
+            <Text>{continuationPadding}</Text>
+            <Text color={theme.fg.muted}>{replyIndicator.prefix}</Text>
+            <Text color={theme.fg.secondary}>{replyIndicator.name}</Text>
+            <Text color={theme.fg.muted}>{replyIndicator.quoteSuffix}{replyIndicator.replyPreview}{replyIndicator.quoteEnd}</Text>
+          </Text>
         </Box>
       )}
-      {lines.map((line, lineIndex) => (
-        <Box key={lineIndex}>
-          {lineIndex === 0 ? (
-            <Text>
-              <Text color={theme.fg.muted}>[{time}] </Text>
-              <Text color={nameColor}>{fitVisual(fromName, 10)}</Text>
-              <Text> </Text>
-            </Text>
-          ) : (
-            <Text>{continuationPadding}</Text>
-          )}
-          <Text color={theme.fg.primary}>{line}</Text>
-          {lineIndex === lines.length - 1 && getStatusIndicator()}
-          {lineIndex === lines.length - 1 && getMeshViewIndicator()}
-        </Box>
-      ))}
     </Box>
   );
 }
