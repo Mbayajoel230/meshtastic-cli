@@ -2884,7 +2884,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
             ? Math.floor((terminalHeight - 7) * 0.8)
             : inspectorHeight;
           return (
-            <>
+            <Box flexGrow={1} flexDirection="column">
               <Box flexGrow={1} borderStyle="single" borderColor={theme.border.normal}>
                 <PacketList
                   packets={packets}
@@ -2899,7 +2899,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
               <Box height={detailHeight} borderStyle="single" borderColor={theme.border.normal}>
                 <PacketInspector packet={selectedPacket} activeTab={inspectorTab} height={detailHeight - 2} nodeStore={nodeStore} scrollOffset={inspectorScrollOffset} meshViewUrl={localMeshViewUrl} useFahrenheit={useFahrenheit} />
               </Box>
-            </>
+            </Box>
           );
         })()}
 
