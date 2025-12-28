@@ -111,7 +111,7 @@ export function ChatPanel({
   const filteredMessages = hasFilter
     ? channelMessages.filter(m => {
         const senderName = nodeStore.getNodeName(m.fromNode).toLowerCase();
-        const text = m.text.toLowerCase();
+        const text = (m.text || "").toLowerCase();
         const filterLower = filter!.toLowerCase();
         return text.includes(filterLower) || senderName.includes(filterLower);
       })
@@ -129,6 +129,7 @@ export function ChatPanel({
   // Helper to calculate how many lines a message will take
   const textWidth = Math.max(20, width - PREFIX_WIDTH - 4 - 6);
   const getMessageHeight = (msg: DbMessage): number => {
+    if (!msg || !msg.text) return 1; // Fallback for messages without text
     const cleanText = msg.text.replace(/[\r\x00-\x1f]/g, "");
     let lineCount = 0;
     for (const line of cleanText.split("\n")) {
@@ -149,7 +150,7 @@ export function ChatPanel({
     if (msg.replyId && messages.find(m => m.packetId === msg.replyId)) {
       lineCount++;
     }
-    return lineCount;
+    return lineCount || 1; // Ensure at least 1 line
   };
 
   // Calculate visible messages based on actual line heights
@@ -439,7 +440,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
   };
 
   // Remove carriage returns and other control characters that break terminal display
-  const cleanText = message.text.replace(/[\r\x00-\x1f]/g, "");
+  const cleanText = (message.text || "").replace(/[\r\x00-\x1f]/g, "");
   const lines = wrapText(cleanText, textWidth);
   const continuationPadding = " ".repeat(PREFIX_WIDTH);
 
@@ -460,7 +461,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, width, meshViewConf
     const availableWidth = width - prefixLength - quoteEnd.length - 2; // -2 for padding
 
     // Truncate the preview if needed
-    const cleanReplyText = repliedMessage.text.replace(/[\r\n\x00-\x1f]/g, " ");
+    const cleanReplyText = (repliedMessage.text || "").replace(/[\r\n\x00-\x1f]/g, " ");
     const replyPreview = availableWidth > 10
       ? (cleanReplyText.length > availableWidth
           ? cleanReplyText.slice(0, availableWidth - 3) + "..."

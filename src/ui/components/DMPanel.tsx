@@ -189,7 +189,7 @@ export function DMPanel({
           <Box paddingX={1}>
             <Text color={theme.fg.muted}>replying to </Text>
             <Text color={theme.fg.accent}>{nodeStore.getNodeName(replyTo.fromNode)}</Text>
-            <Text color={theme.fg.muted}>: "{replyTo.text.length > 30 ? replyTo.text.slice(0, 30) + "..." : replyTo.text}"</Text>
+            <Text color={theme.fg.muted}>: "{(replyTo.text || "").length > 30 ? (replyTo.text || "").slice(0, 30) + "..." : (replyTo.text || "")}"</Text>
           </Box>
         )}
 
@@ -292,7 +292,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshView
 
   const maxLen = Math.max(10, textWidth);
   // Remove carriage returns and other control characters that break terminal display
-  const cleanText = message.text.replace(/[\r\x00-\x1f]/g, "");
+  const cleanText = (message.text || "").replace(/[\r\x00-\x1f]/g, "");
   const displayText = cleanText.length > maxLen
     ? cleanText.slice(0, maxLen - 3) + "..."
     : cleanText;
@@ -302,7 +302,7 @@ function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshView
     ? allMessages.find(m => m.packetId === message.replyId)
     : null;
   const replyPreview = repliedMessage
-    ? repliedMessage.text.slice(0, 20) + (repliedMessage.text.length > 20 ? "..." : "")
+    ? (repliedMessage.text || "").slice(0, 20) + ((repliedMessage.text || "").length > 20 ? "..." : "")
     : null;
 
   return (
