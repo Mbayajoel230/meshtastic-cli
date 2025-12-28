@@ -285,7 +285,7 @@ function getShortName(longName: string | undefined, nodeId: number): string {
 }
 
 function MeshViewPacketRow({ packet, isSelected, useFahrenheit }: MeshViewPacketRowProps) {
-  const time = new Date(packet.import_time).toLocaleTimeString("en-US", { hour12: false });
+  const time = new Date(packet.import_time).toLocaleTimeString(undefined, { hour12: false });
   const bgColor = isSelected ? theme.bg.selected : undefined;
   const portName = getPortName(packet.portnum);
   const portColor = getPortColor(packet.portnum);

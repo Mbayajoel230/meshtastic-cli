@@ -230,7 +230,7 @@ interface MessageRowProps {
 
 function MessageRow({ message, nodeStore, isOwn, isSelected, textWidth, meshViewConfirmedIds, allMessages }: MessageRowProps) {
   const fromName = nodeStore.getNodeName(message.fromNode);
-  const time = new Date(message.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
+  const time = new Date(message.timestamp * 1000).toLocaleTimeString(undefined, { hour12: false });
   const nameColor = isOwn ? theme.fg.accent : theme.packet.position;
   const [now, setNow] = useState(Date.now());
   const isConfirmedByMeshView = message.packetId && meshViewConfirmedIds?.has(message.packetId);

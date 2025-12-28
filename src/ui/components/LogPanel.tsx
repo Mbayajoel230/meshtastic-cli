@@ -106,7 +106,7 @@ function LogRow({ response, isSelected, nodeStore }: {
   const type = isPosition ? "POSITION" : isNodeInfo ? "NODEINFO" : "TRACEROUTE";
   const typeColor = isPosition ? theme.packet.position : isNodeInfo ? theme.packet.nodeinfo : theme.packet.traceroute;
   const fromName = nodeStore.getNodeName(response.fromNode);
-  const time = new Date(response.timestamp * 1000).toLocaleTimeString("en-US", { hour12: false });
+  const time = new Date(response.timestamp * 1000).toLocaleTimeString(undefined, { hour12: false });
   const prefix = isSelected ? "▶ " : "  ";
 
   return (

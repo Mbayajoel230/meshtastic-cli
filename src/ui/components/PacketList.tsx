@@ -351,7 +351,7 @@ interface PacketRowProps {
 }
 
 function PacketRow({ packet, nodeStore, isSelected, useFahrenheit, meshViewConfirmedIds }: PacketRowProps) {
-  const time = packet.timestamp.toLocaleTimeString("en-US", { hour12: false });
+  const time = packet.timestamp.toLocaleTimeString(undefined, { hour12: false });
   const bgColor = isSelected ? theme.bg.selected : undefined;
   const isConfirmedByMeshView = packet.meshPacket?.id && meshViewConfirmedIds?.has(packet.meshPacket.id);
 
