@@ -172,16 +172,18 @@ function NodeRow({ node, isSelected, terminalWidth = 100 }: NodeRowProps) {
 
   return (
     <Box backgroundColor={bgColor} paddingX={1}>
-      <Text color={nameColor}>{padEndVisual(displayName, nameWidth)}</Text>
-      {!isCompact && <Text color={theme.fg.muted}>{nodeId.padEnd(11)}</Text>}
-      <Text color="#ffcc00">{favStar}</Text>
-      <Text color={getHopsColor(node.hopsAway)}>{hops.padEnd(hopsPadding)}</Text>
-      <Text color={getSnrColor(node.snr)}>{snr.padStart(snrPadding)} </Text>
-      <Text color={getBatteryColor(node.batteryLevel, node.voltage)}>{battery.padEnd(batteryPadding)} </Text>
-      <Text color={theme.fg.secondary}>{lastHeard.padEnd(agePadding)} </Text>
-      <Text color={getRoleColor(node.role)}>{role} </Text>
-      <Box flexGrow={1}><Text color={theme.fg.primary} wrap="truncate">{longName}</Text></Box>
-      {!isCompact && <Box width={16}><Text color={theme.data.hardware} wrap="truncate">{hwModel}</Text></Box>}
+      <Text wrap="truncate">
+        <Text color={nameColor}>{padEndVisual(displayName, nameWidth)}</Text>
+        {!isCompact && <Text color={theme.fg.muted}>{nodeId.padEnd(11)}</Text>}
+        <Text color="#ffcc00">{favStar}</Text>
+        <Text color={getHopsColor(node.hopsAway)}>{hops.padEnd(hopsPadding)}</Text>
+        <Text color={getSnrColor(node.snr)}>{snr.padStart(snrPadding)} </Text>
+        <Text color={getBatteryColor(node.batteryLevel, node.voltage)}>{battery.padEnd(batteryPadding)} </Text>
+        <Text color={theme.fg.secondary}>{lastHeard.padEnd(agePadding)} </Text>
+        <Text color={getRoleColor(node.role)}>{role} </Text>
+        <Text color={theme.fg.primary}>{longName}</Text>
+        {!isCompact && hwModel && <Text color={theme.data.hardware}> {hwModel}</Text>}
+      </Text>
     </Box>
   );
 }
