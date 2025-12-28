@@ -162,7 +162,7 @@ export function DMPanel({
         {/* Messages */}
         <Box height={chatHeight} flexDirection="column" paddingX={1}>
           {!selectedConvo ? (
-            <Text color={theme.fg.muted}>Press 'd' on a node to start a DM</Text>
+            null
           ) : messages.length === 0 ? (
             <Text color={theme.fg.muted}>No messages yet. Start the conversation!</Text>
           ) : (
