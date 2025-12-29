@@ -1807,9 +1807,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         return [...nodeList].sort((a, b) => {
           let cmp = 0;
           switch (nodesSortKey) {
-            case "hops":
-              cmp = (a.hopsAway ?? 999) - (b.hopsAway ?? 999);
+            case "hops": {
+              const aHops = (a.hopsAway == null || a.hopsAway < 0) ? 999 : a.hopsAway;
+              const bHops = (b.hopsAway == null || b.hopsAway < 0) ? 999 : b.hopsAway;
+              cmp = aHops - bHops;
               break;
+            }
             case "snr":
               cmp = (b.snr ?? -999) - (a.snr ?? -999);
               break;
