@@ -2911,8 +2911,8 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
               let cmp = 0;
               switch (nodesSortKey) {
                 case "hops": {
-                  const aHops = (a.hopsAway === undefined || a.hopsAway < 0) ? 999 : a.hopsAway;
-                  const bHops = (b.hopsAway === undefined || b.hopsAway < 0) ? 999 : b.hopsAway;
+                  const aHops = (a.hopsAway == null || a.hopsAway < 0) ? 999 : a.hopsAway;
+                  const bHops = (b.hopsAway == null || b.hopsAway < 0) ? 999 : b.hopsAway;
                   cmp = aHops - bHops;
                   break;
                 }
