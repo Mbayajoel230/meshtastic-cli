@@ -103,7 +103,7 @@ export function NodesPanel({ nodes, selectedIndex, height = 20, inspectorHeight 
           {terminalWidth > 90 && <Text color={theme.fg.muted}>{"ID".padEnd(11)}</Text>}
           <Text color={sortKey === "favorites" ? theme.fg.accent : theme.fg.muted}>{"★"}</Text>
           <Text color={sortKey === "hops" ? theme.fg.accent : theme.fg.muted}>{terminalWidth > 90 ? "HOP".padEnd(4) : "H".padEnd(2)}</Text>
-          <Text color={sortKey === "snr" ? theme.fg.accent : theme.fg.muted}>{terminalWidth > 90 ? "SNR".padStart(7) : "SNR".padStart(4)} </Text>
+          <Text color={sortKey === "snr" ? theme.fg.accent : theme.fg.muted}>{terminalWidth > 90 ? "SNR".padStart(8) : "SNR".padStart(5)} </Text>
           <Text color={sortKey === "battery" ? theme.fg.accent : theme.fg.muted}>{(terminalWidth > 90 ? "BAT".padEnd(5) : "B".padEnd(4)) + " "}</Text>
           <Text color={sortKey === "time" ? theme.fg.accent : theme.fg.muted}>{(terminalWidth > 90 ? "AGE".padEnd(6) : "AGE".padEnd(4)) + " "}</Text>
           <Text color={theme.fg.muted}>{"R "}</Text>
@@ -145,9 +145,9 @@ function NodeRow({ node, isSelected, terminalWidth = 100 }: NodeRowProps) {
 
   const name = node.shortName || "???";
   const nodeId = formatNodeId(node.num);
-  const hops = node.hopsAway !== undefined
+  const hops = node.hopsAway != null
     ? (node.hopsAway < 0 ? "?" : `${node.hopsAway}`)
-    : "-";
+    : "?";
   const snr = node.snr !== undefined
     ? (isCompact ? `${Math.round(node.snr)}dB` : `${node.snr.toFixed(1)}dB`)
     : "-";
@@ -168,7 +168,7 @@ function NodeRow({ node, isSelected, terminalWidth = 100 }: NodeRowProps) {
   const role = formatRoleChar(node.role);
 
   const hopsPadding = isCompact ? 2 : 4;
-  const snrPadding = isCompact ? 4 : 7;
+  const snrPadding = isCompact ? 5 : 8;
   const batteryPadding = isCompact ? 4 : 5;
   const agePadding = isCompact ? 4 : 6;
 
@@ -270,11 +270,11 @@ function NodeInspector({ node, allNodes, height }: { node?: NodeData; allNodes: 
             <Text color={getSnrColor(node.snr)}>{node.snr.toFixed(1)}dB</Text>
           </>
         )}
-        {node.hopsAway !== undefined && (
+        {node.hopsAway != null && (
           <>
             <Text color={theme.fg.muted}>  Hops: </Text>
             <Text color={getHopsColor(node.hopsAway)}>
-              {node.hopsAway === 0 ? "Direct" : `${node.hopsAway}`}
+              {node.hopsAway < 0 ? "?" : node.hopsAway === 0 ? "Direct" : `${node.hopsAway}`}
             </Text>
           </>
         )}
@@ -380,7 +380,7 @@ function formatLastHeard(timestamp: number): string {
 }
 
 function getHopsColor(hops?: number): string {
-  if (hops === undefined || hops < 0) return theme.fg.muted;
+  if (hops == null || hops < 0) return theme.fg.muted;
   if (hops === 0) return theme.packet.direct;
   if (hops === 1) return theme.fg.accent;
   if (hops <= 3) return theme.packet.telemetry;
