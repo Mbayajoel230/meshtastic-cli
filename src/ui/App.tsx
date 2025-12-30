@@ -1617,6 +1617,52 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
     showNotification("Batch edit cancelled. Changes discarded.");
   }, [showNotification]);
 
+  // Helper function to sort nodes
+  const getSortedNodes = useCallback((nodeList: NodeData[], sortKey: NodeSortKey, sortAscending: boolean) => {
+    return [...nodeList].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "hops": {
+          const aHops = (a.hopsAway == null || a.hopsAway < 0) ? 999 : a.hopsAway;
+          const bHops = (b.hopsAway == null || b.hopsAway < 0) ? 999 : b.hopsAway;
+          cmp = aHops - bHops;
+          break;
+        }
+        case "snr":
+          cmp = (b.snr ?? -999) - (a.snr ?? -999);
+          break;
+        case "battery":
+          cmp = (b.batteryLevel ?? -1) - (a.batteryLevel ?? -1);
+          break;
+        case "time":
+          cmp = b.lastHeard - a.lastHeard;
+          break;
+        case "favorites":
+          cmp = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0);
+          break;
+      }
+      return sortAscending ? cmp : -cmp;
+    });
+  }, []);
+
+  // Helper function to navigate to a specific node
+  const navigateToNode = useCallback((nodeNum: number) => {
+    // Clear any active filter
+    setNodesFilter("");
+    setNodesFilterInput(false);
+
+    // Get sorted nodes list
+    const sortedNodes = getSortedNodes(nodes, nodesSortKey, nodesSortAscending);
+    const nodeIndex = sortedNodes.findIndex((n) => n.num === nodeNum);
+
+    if (nodeIndex >= 0) {
+      setMode("nodes");
+      setSelectedNodeIndex(nodeIndex);
+    } else {
+      showNotification("Node not found in list", theme.status.offline);
+    }
+  }, [nodes, nodesSortKey, nodesSortAscending, getSortedNodes, showNotification]);
+
   // Key input handling
   useInput((input, key) => {
     // If quit dialog is showing, it handles its own input
@@ -1802,41 +1848,13 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         }
       }
     } else if (mode === "nodes") {
-      // Sort function for nodes
-      const sortNodes = (nodeList: NodeData[]) => {
-        return [...nodeList].sort((a, b) => {
-          let cmp = 0;
-          switch (nodesSortKey) {
-            case "hops": {
-              const aHops = (a.hopsAway == null || a.hopsAway < 0) ? 999 : a.hopsAway;
-              const bHops = (b.hopsAway == null || b.hopsAway < 0) ? 999 : b.hopsAway;
-              cmp = aHops - bHops;
-              break;
-            }
-            case "snr":
-              cmp = (b.snr ?? -999) - (a.snr ?? -999);
-              break;
-            case "battery":
-              cmp = (b.batteryLevel ?? -1) - (a.batteryLevel ?? -1);
-              break;
-            case "time":
-              cmp = b.lastHeard - a.lastHeard;
-              break;
-            case "favorites":
-              cmp = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0);
-              break;
-          }
-          return nodesSortAscending ? cmp : -cmp;
-        });
-      };
-
       // Compute filtered and sorted nodes
-      const filteredNodes = sortNodes(nodesFilter
+      const filteredNodes = getSortedNodes(nodesFilter
         ? nodes.filter(n =>
             (n.shortName?.toLowerCase().includes(nodesFilter.toLowerCase())) ||
             (n.longName?.toLowerCase().includes(nodesFilter.toLowerCase()))
           )
-        : nodes);
+        : nodes, nodesSortKey, nodesSortAscending);
 
       // Filter input mode
       if (nodesFilterInput) {
@@ -2003,11 +2021,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if (input === "n") {
         const selectedResponse = logResponses[selectedLogIndex];
         if (selectedResponse) {
-          const nodeIndex = nodes.findIndex((n) => n.num === selectedResponse.fromNode);
-          if (nodeIndex >= 0) {
-            setMode("nodes");
-            setSelectedNodeIndex(nodeIndex);
-          }
+          navigateToNode(selectedResponse.fromNode);
         }
       }
     } else if (mode === "chat") {
@@ -2300,11 +2314,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         // 'n' to go to node
         if (input === "n" && dmMessages[selectedDMMessageIndex]) {
           const msg = dmMessages[selectedDMMessageIndex];
-          const nodeIndex = nodes.findIndex((n) => n.num === msg.fromNode);
-          if (nodeIndex >= 0) {
-            setMode("nodes");
-            setSelectedNodeIndex(nodeIndex);
-          }
+          navigateToNode(msg.fromNode);
           return;
         }
         // 'R' to resend failed message
@@ -2908,31 +2918,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         })()}
 
         {mode === "nodes" && (() => {
-          // Sort function for nodes
-          const sortNodes = (nodeList: NodeData[]) => {
-            return [...nodeList].sort((a, b) => {
-              let cmp = 0;
-              switch (nodesSortKey) {
-                case "hops": {
-                  const aHops = (a.hopsAway == null || a.hopsAway < 0) ? 999 : a.hopsAway;
-                  const bHops = (b.hopsAway == null || b.hopsAway < 0) ? 999 : b.hopsAway;
-                  cmp = aHops - bHops;
-                  break;
-                }
-                case "snr": cmp = (b.snr ?? -999) - (a.snr ?? -999); break;
-                case "battery": cmp = (b.batteryLevel ?? -1) - (a.batteryLevel ?? -1); break;
-                case "time": cmp = b.lastHeard - a.lastHeard; break;
-                case "favorites": cmp = (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0); break;
-              }
-              return nodesSortAscending ? cmp : -cmp;
-            });
-          };
-          const filteredNodes = sortNodes(nodesFilter
+          const filteredNodes = getSortedNodes(nodesFilter
             ? nodes.filter(n =>
                 (n.shortName?.toLowerCase().includes(nodesFilter.toLowerCase())) ||
                 (n.longName?.toLowerCase().includes(nodesFilter.toLowerCase()))
               )
-            : nodes);
+            : nodes, nodesSortKey, nodesSortAscending);
           return (
             <Box flexGrow={1} borderStyle="single" borderColor={theme.border.normal}>
               <NodesPanel
