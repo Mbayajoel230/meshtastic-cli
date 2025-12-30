@@ -1758,9 +1758,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       // Page up/down with Ctrl+u/d (vim-style) or Page keys
       if ((key.ctrl && input === "d") || key.pageDown) {
         setSelectedPacketIndex((i) => Math.min(i + pageSize, packets.length - 1));
+        return;
       }
       if ((key.ctrl && input === "u") || key.pageUp) {
         setSelectedPacketIndex((i) => Math.max(i - pageSize, 0));
+        return;
       }
       // Jump to first/last packet (vim-style g/G or Home/End)
       // Home key escape sequences: \x1b[H, \x1b[1~, \x1bOH
@@ -1932,9 +1934,11 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       // Page up/down
       if ((key.ctrl && input === "d") || key.pageDown) {
         setSelectedNodeIndex((i) => Math.min(i + nodePageSize, filteredNodes.length - 1));
+        return;
       }
       if ((key.ctrl && input === "u") || key.pageUp) {
         setSelectedNodeIndex((i) => Math.max(i - nodePageSize, 0));
+        return;
       }
       // Home/End keys
       const isNodeHome = input === "g" || input === "\x1b[H" || input === "\x1b[1~" || input === "\x1bOH";
@@ -1947,19 +1951,19 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       }
       // Commands operate on filtered list
       const selectedNode = filteredNodes[selectedNodeIndex];
-      if (input === "t" && selectedNode) {
+      if (input === "t" && selectedNode && !key.ctrl) {
         sendTraceroute(selectedNode.num);
       }
-      if (input === "p" && selectedNode) {
+      if (input === "p" && selectedNode && !key.ctrl) {
         sendPositionRequest(selectedNode.num);
       }
-      if (input === "e" && selectedNode) {
+      if (input === "e" && selectedNode && !key.ctrl) {
         sendTelemetryRequest(selectedNode.num);
       }
-      if (input === "d" && selectedNode) {
+      if (input === "d" && selectedNode && !key.ctrl) {
         startDMWith(selectedNode.num);
       }
-      if (input === "D" && selectedNode) {
+      if (input === "D" && selectedNode && !key.ctrl) {
         sendTraceroute(selectedNode.num, 0); // Direct ping
       }
       if (input === "l" && selectedNode?.hwModel) {
@@ -2189,11 +2193,7 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
         if (input === "n") {
           const selectedMsg = filteredMessages[selectedChatMessageIndex];
           if (selectedMsg) {
-            const nodeIndex = nodes.findIndex((n) => n.num === selectedMsg.fromNode);
-            if (nodeIndex >= 0) {
-              setMode("nodes");
-              setSelectedNodeIndex(nodeIndex);
-            }
+            navigateToNode(selectedMsg.fromNode);
           }
           return;
         }
@@ -2728,10 +2728,12 @@ export function App({ address, packetStore, nodeStore, skipConfig = false, skipN
       if ((key.ctrl && input === "d") || key.pageDown) {
         setSelectedMeshViewIndex((i) => Math.min(i + pageSize, meshViewPackets.length - 1));
         setMeshViewInspectorScrollOffset(0);
+        return;
       }
       if ((key.ctrl && input === "u") || key.pageUp) {
         setSelectedMeshViewIndex((i) => Math.max(i - pageSize, 0));
         setMeshViewInspectorScrollOffset(0);
+        return;
       }
       // Home/End
       const isMvHome = input === "g" || input === "\x1b[H" || input === "\x1b[1~" || input === "\x1bOH";
