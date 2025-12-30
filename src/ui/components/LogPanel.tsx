@@ -14,9 +14,8 @@ interface LogPanelProps {
 }
 
 export function LogPanel({ responses, selectedIndex, height, nodeStore }: LogPanelProps) {
-  // Fixed height calculations
-  const listHeight = Math.max(5, Math.floor(height / 2));
-  const inspectorHeight = height - listHeight - 1;
+  // Left panel width for list
+  const LEFT_PANEL_WIDTH = 30;
 
   if (responses.length === 0) {
     return (
@@ -35,19 +34,34 @@ export function LogPanel({ responses, selectedIndex, height, nodeStore }: LogPan
   const selectedResponse = responses[selectedIndex];
 
   return (
-    <Box flexDirection="column" paddingX={1} width="100%" height={height}>
-      <LogList
-        responses={responses}
-        selectedIndex={selectedIndex}
-        height={listHeight}
-        nodeStore={nodeStore}
-      />
-      <Text color={theme.border.normal}>{"─".repeat(70)}</Text>
-      <LogInspector
-        response={selectedResponse}
-        nodeStore={nodeStore}
-        height={inspectorHeight}
-      />
+    <Box flexDirection="row" width="100%" height={height}>
+      {/* Left panel - Log list */}
+      <Box
+        flexDirection="column"
+        width={LEFT_PANEL_WIDTH}
+        borderStyle="single"
+        borderColor={theme.border.normal}
+        borderRight
+        borderTop={false}
+        borderBottom={false}
+        borderLeft={false}
+      >
+        <LogList
+          responses={responses}
+          selectedIndex={selectedIndex}
+          height={height}
+          nodeStore={nodeStore}
+        />
+      </Box>
+
+      {/* Right panel - Log inspector */}
+      <Box flexDirection="column" flexGrow={1} paddingX={1}>
+        <LogInspector
+          response={selectedResponse}
+          nodeStore={nodeStore}
+          height={height - 2}
+        />
+      </Box>
     </Box>
   );
 }
@@ -73,9 +87,10 @@ function LogList({ responses, selectedIndex, height, nodeStore }: {
 
   return (
     <>
-      <Text color={theme.fg.muted}>
-        {"  "}{"TYPE".padEnd(12)}{"FROM".padEnd(12)}{"TIME"}
-      </Text>
+      <Box paddingX={1}>
+        <Text color={theme.fg.accent} bold>Log</Text>
+        <Text color={theme.fg.muted}> ({responses.length})</Text>
+      </Box>
       {visibleResponses.map((response, i) => (
         <LogRow
           key={`log-${response.id || response.timestamp}-${i}`}
@@ -103,19 +118,18 @@ function LogRow({ response, isSelected, nodeStore }: {
 }) {
   const isPosition = isPositionResponse(response);
   const isNodeInfo = isNodeInfoResponse(response);
-  const type = isPosition ? "POSITION" : isNodeInfo ? "NODEINFO" : "TRACEROUTE";
+  const type = isPosition ? "POS" : isNodeInfo ? "NI" : "TR";
   const typeColor = isPosition ? theme.packet.position : isNodeInfo ? theme.packet.nodeinfo : theme.packet.traceroute;
   const fromName = nodeStore.getNodeName(response.fromNode);
   const time = new Date(response.timestamp * 1000).toLocaleTimeString(undefined, { hour12: false });
-  const prefix = isSelected ? "▶ " : "  ";
+  const bgColor = isSelected ? theme.bg.selected : undefined;
 
   return (
-    <Text>
-      <Text color={theme.fg.accent}>{prefix}</Text>
-      <Text color={typeColor}>{type.padEnd(12)}</Text>
+    <Box backgroundColor={bgColor} paddingX={1}>
+      <Text color={typeColor}>{type.padEnd(4)}</Text>
       <Text color={theme.fg.accent}>{fitVisual(fromName, 10)}  </Text>
       <Text color={theme.fg.secondary}>{time}</Text>
-    </Text>
+    </Box>
   );
 }
 
