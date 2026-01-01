@@ -91,7 +91,7 @@ let clearSession = false;
 let meshViewUrl: string | undefined;
 let useFahrenheit = false;
 let enableLogging = true;
-let packetLimit = 50000;
+let packetLimit = 1000;
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -130,7 +130,7 @@ Options:
   --skip-nodes, -N      Skip downloading node database on startup (much faster connect)
   --meshview, -m        MeshView URL for packet/node links (default: from settings or disabled)
   --fahrenheit, -F      Display temperatures in Fahrenheit instead of Celsius
-  --packet-limit, -p    Maximum packets to store in database (default: 50000)
+  --packet-limit, -p    Maximum packets to store in database (default: 1000)
   --enable-logging, -L  Enable verbose logging to ~/.config/meshtastic-cli/log
   --help, -h            Show this help message
 `);
